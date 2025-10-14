@@ -1,4 +1,7 @@
+import type { ReactNode } from "react";
+
 export interface Listing {
+  currency: ReactNode;
   id: string;
   title: string;
   description: string;
@@ -14,10 +17,15 @@ export interface Listing {
   landlordId: string;
   landlordName: string;
   landlordPhone: string;
+  bedrooms: number;
+  bathrooms: number;
+  isAvailable: boolean;
+  landlordEmail: string;
   verified: boolean;
   rating: number;
   reviewCount: number;
   createdAt: string;
+  updatedAt: string;
 }
 
 export interface SearchFilters {

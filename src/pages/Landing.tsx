@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import Navbar from '../components/layout/Navbar';
 import Footer from '../components/layout/Footer';
 import HeroSection from '../components/landing/HeroSection';
+import FeaturedListings from '../components/landing/FeaturedListings';
 
 const Landing: React.FC = () => {
   // ============ STATE ============
@@ -44,7 +45,6 @@ const Landing: React.FC = () => {
       {/* Hero Section */}
       <HeroSection onSearch={handleSearch} />
 
-      {/* Featured Listings
       <FeaturedListings />
 
       {/* How It Works */}

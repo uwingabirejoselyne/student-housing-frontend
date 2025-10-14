@@ -63,7 +63,7 @@ const ListingCard: React.FC<ListingCardProps> = ({
           {/* Price */}
           <div className="text-right ml-4">
             <div className="text-xl font-bold text-gray-900">
-              {listing.price.toLocaleString()} {listing.location}
+              {listing.price.toLocaleString()} {listing.currency}
             </div>
             <div className="text-xs text-gray-500">per month</div>
           </div>
