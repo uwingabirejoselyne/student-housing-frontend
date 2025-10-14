@@ -1,17 +1,12 @@
 import './App.css'
-import Footer from './components/layout/Footer'
-import Navbar from './components/layout/Navbar'
 import { AuthProvider } from './context/AuthContext'
+import Landing from './pages/Landing'
 
 function App() {
 
   return (
      <AuthProvider>
-      <Navbar
-        onLoginClick={() => console.log('Login clicked')}
-        onSignUpClick={() => console.log('Sign Up clicked')}
-      />
-      <Footer />
+      <Landing/>
     </AuthProvider>
   )
 }
