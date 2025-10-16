@@ -4,6 +4,7 @@ import Footer from '../components/layout/Footer';
 import HeroSection from '../components/landing/HeroSection';
 import FeaturedListings from '../components/landing/FeaturedListings';
 import HowItWorks from '../components/landing/HowItWorks';
+import LoginModal from '../components/auth/LoginModal';
 
 const Landing: React.FC = () => {
   // ============ STATE ============
@@ -55,18 +56,18 @@ const Landing: React.FC = () => {
       <Footer />
 
       {/* Login Modal */}
-      {/* <LoginModal
+       <LoginModal
         isOpen={isLoginModalOpen}
         onClose={() => setIsLoginModalOpen(false)}
         onSwitchToRegister={handleSwitchToRegister}
-      /> */}
+      /> 
 
       {/* Register Modal */}
-      {/* <RegisterModal
+       {/* <RegisterModal
         isOpen={isRegisterModalOpen}
         onClose={() => setIsRegisterModalOpen(false)}
         onSwitchToLogin={handleSwitchToLogin}
-      />  */}
+      />   */}
     </div>
   );
 };
