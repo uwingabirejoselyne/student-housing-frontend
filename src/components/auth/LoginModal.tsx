@@ -41,13 +41,13 @@ const LoginModal: React.FC<{ isOpen: boolean; onClose: () => void; onSwitchToReg
   if (!isOpen) return null; // ✅ Only render if isOpen is true
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl max-w-md w-full p-8 relative">
+    <div className="fixed inset-0 bg-white bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white border border-gray-300 rounded-2xl max-w-md w-full p-8 relative">
         <button onClick={onClose} className="absolute top-4 right-4">
           <X className="w-6 h-6" />
         </button>
 
-        <h2 className="text-2xl font-bold mb-6">Welcome Back</h2>
+        <h2 className="text-2xl font-bold mb-6">Welcome To Student Housing</h2>
 
         {error && (
           <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
