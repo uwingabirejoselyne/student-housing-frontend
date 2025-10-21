@@ -6,6 +6,7 @@ import FeaturedListings from '../components/landing/FeaturedListings';
 import HowItWorks from '../components/landing/HowItWorks';
 import LoginModal from '../components/auth/LoginModal';
 import RegisterModal from '../components/auth/RegisterModal';
+import BrowseListings from './BrowseListings';
 
 const Landing: React.FC = () => {
   // ============ STATE ============
@@ -38,7 +39,7 @@ const Landing: React.FC = () => {
 
   // ============ RENDER ============
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="min-h-screen  bg-white flex flex-col">
       {/* Navbar */}
       <Navbar
         onLoginClick={handleLoginClick}
