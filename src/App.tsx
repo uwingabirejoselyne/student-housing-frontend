@@ -10,8 +10,6 @@ function App() {
     <AuthProvider>
         <div className="min-h-screen bg-white flex flex-col">
           {/* Navbar is on all pages */}
-          <Landing />
-
           {/* Main Content - Routes */}
           <main className="flex-1">
             <Routes>

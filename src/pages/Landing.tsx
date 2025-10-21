@@ -55,7 +55,6 @@ const Landing: React.FC = () => {
       <HowItWorks /> 
 
       {/* Footer */}
-      <Footer />
 
       {/* Login Modal */}
        <LoginModal
