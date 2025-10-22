@@ -6,6 +6,8 @@ import BrowseListings from './pages/BrowseListings';
 import Footer from './components/layout/Footer';
 import SearchListings from './pages/SearchListings';
 import Navbar from './components/layout/Navbar';
+import ListingDetails from './pages/ListingDetails';
+import StudentDashboard from './pages/StudentDashboard';
 
 function App() {
   return (
@@ -24,6 +26,8 @@ function App() {
               <Route path="/" element={<Landing />} />
               <Route path="/browse" element={<BrowseListings />} />
               <Route path="/search" element={<SearchListings />} />
+              <Route path="/listings/:id" element={<ListingDetails />} />
+               <Route path="/student" element={<StudentDashboard />} />
              
 
               {/* Admi
