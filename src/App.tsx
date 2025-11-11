@@ -7,6 +7,7 @@ import BrowseListings from './pages/BrowseListings';
 import SearchListings from './pages/SearchListings';
 import ListingDetails from './pages/ListingDetails';
 import StudentDashboard from './pages/StudentDashboard';
+import LandlordDashboard from './pages/LandlordDashboard';
 
 // Placeholder components for student dashboard sections
 const SavedProperties = () => (
@@ -63,6 +64,9 @@ function App() {
         <Route path="/student/bookings" element={<Bookings />} />
         <Route path="/student/profile" element={<Profile />} />
         <Route path="/student/settings" element={<Settings />} />
+
+        {/* Landlord Dashboard Routes - Without Navbar */}
+        <Route path="/landlord" element={<LandlordDashboard />} />
       </Routes>
     </AuthProvider>
   );
