@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { Home, Menu, X } from 'lucide-react';
+import { Home, Menu, X, User } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { Button } from '../ui/Button';
 
 interface NavbarProps {
   onLoginClick: () => void;
@@ -10,6 +12,7 @@ interface NavbarProps {
 const Navbar: React.FC<NavbarProps> = ({ onLoginClick, onSignUpClick }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { user, isAuthenticated, logout } = useAuth();
+  const navigate = useNavigate();
 
   const handleLogout = async () => {
     try {
@@ -25,79 +28,89 @@ const Navbar: React.FC<NavbarProps> = ({ onLoginClick, onSignUpClick }) => {
   };
 
   return (
-    <nav className="fixed top-0 left-0 right-0 bg-white shadow-md z-50">
-      <div className="mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-22">
+    <nav className="fixed top-0 left-0 right-0 bg-white border-b border-slate-200 z-50 slide-up">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <div className="flex items-center space-x-3">
-            <div className="bg-black rounded-lg p-2">
-              <Home className="w-6 h-6 text-white" />
+          <Link to="/" className="flex items-center gap-3 group">
+            <div className="bg-slate-900 rounded-lg p-2 group-hover:bg-slate-800 transition-colors">
+              <Home className="w-6 h-6 text-white" aria-hidden="true" />
             </div>
-            <span className="text-xl font-bold text-gray-900">StudentStay</span>
-          </div>
+            <span className="text-xl font-bold text-slate-900">StudentStay</span>
+          </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
-            <a
-              href="#works"
-              className="text-gray-600 hover:text-gray-900 transition-colors"
+          <div className="hidden md:flex items-center gap-6">
+            <Link
+              to="/"
+              className="text-slate-600 hover:text-slate-900 font-medium transition-colors"
             >
-              How It Works
-            </a>
-            <a
-              href="#browse"
-              className="text-gray-600 hover:text-gray-900 transition-colors"
+              Home
+            </Link>
+            <Link
+              to="/browse"
+              className="text-slate-600 hover:text-slate-900 font-medium transition-colors"
             >
               Browse Listings
-            </a>
-            <a
-              href="#about"
-              className="text-gray-600 hover:text-gray-900 transition-colors"
+            </Link>
+            <Link
+              to="/search"
+              className="text-slate-600 hover:text-slate-900 font-medium transition-colors"
             >
-              About
-            </a>
+              Search
+            </Link>
 
             {/* Authentication Buttons */}
             {isAuthenticated && user ? (
-              <div className="flex items-center space-x-4">
-                <span className="text-gray-700 font-medium">
-                  Hi, {user.name}
-                </span>
-                <button
+              <div className="flex items-center gap-4">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  icon={User}
+                  onClick={() => navigate('/student')}
+                  aria-label="Go to dashboard"
+                >
+                  {user.name}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
                   onClick={handleLogout}
-                  className="px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors"
                 >
                   Log Out
-                </button>
+                </Button>
               </div>
             ) : (
-              <>
-                <button
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="ghost"
+                  size="sm"
                   onClick={onLoginClick}
-                  className="px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors"
                 >
                   Log In
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant="primary"
+                  size="sm"
                   onClick={onSignUpClick}
-                  className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors"
                 >
                   Sign Up
-                </button>
-              </>
+                </Button>
+              </div>
             )}
           </div>
 
           {/* Mobile Menu Button */}
           <button
             onClick={toggleMobileMenu}
-            className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
-            aria-label="Toggle menu"
+            className="md:hidden p-2 rounded-lg hover:bg-slate-100 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+            aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
+            aria-expanded={isMobileMenuOpen}
           >
             {isMobileMenuOpen ? (
-              <X className="w-6 h-6 text-gray-700" />
+              <X className="w-6 h-6 text-slate-700" aria-hidden="true" />
             ) : (
-              <Menu className="w-6 h-6 text-gray-700" />
+              <Menu className="w-6 h-6 text-slate-700" aria-hidden="true" />
             )}
           </button>
         </div>
@@ -105,50 +118,56 @@ const Navbar: React.FC<NavbarProps> = ({ onLoginClick, onSignUpClick }) => {
 
       {/* Mobile Menu */}
       {isMobileMenuOpen && (
-        <div className="md:hidden bg-white border-t border-gray-200">
-          <div className="px-4 py-2 space-y-2">
-            <a
-              href="#works"
-              className="block py-2 text-gray-600 hover:text-gray-900"
+        <div className="md:hidden bg-white border-t border-slate-200 fade-in">
+          <div className="px-4 py-3 space-y-1">
+            <Link
+              to="/"
+              className="block py-2.5 px-3 text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors"
               onClick={() => setIsMobileMenuOpen(false)}
             >
-              How It Works
-            </a>
-            <a
-              href="#browse"
-              className="block py-2 text-gray-600 hover:text-gray-900"
+              Home
+            </Link>
+            <Link
+              to="/browse"
+              className="block py-2.5 px-3 text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors"
               onClick={() => setIsMobileMenuOpen(false)}
             >
               Browse Listings
-            </a>
-            <a
-              href="#about"
-              className="block py-2 text-gray-600 hover:text-gray-900"
+            </Link>
+            <Link
+              to="/search"
+              className="block py-2.5 px-3 text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors"
               onClick={() => setIsMobileMenuOpen(false)}
             >
-              About
-            </a>
+              Search
+            </Link>
 
             {isAuthenticated && user ? (
-              <>
-                <div className="py-2 text-gray-700 font-medium">
+              <div className="pt-3 border-t border-slate-200 mt-3 space-y-2">
+                <button
+                  onClick={() => {
+                    navigate('/student');
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className="block w-full text-left py-2.5 px-3 text-slate-700 font-medium hover:bg-slate-50 rounded-lg transition-colors"
+                >
                   Hi, {user.name}
-                </div>
+                </button>
                 <button
                   onClick={handleLogout}
-                  className="block w-full text-left py-2 text-gray-600 hover:text-gray-900"
+                  className="block w-full text-left py-2.5 px-3 text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors"
                 >
                   Log Out
                 </button>
-              </>
+              </div>
             ) : (
-              <>
+              <div className="pt-3 border-t border-slate-200 mt-3 space-y-2">
                 <button
                   onClick={() => {
                     onLoginClick();
                     setIsMobileMenuOpen(false);
                   }}
-                  className="block w-full text-left py-2 text-gray-600 hover:text-gray-900"
+                  className="block w-full text-left py-2.5 px-3 text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors"
                 >
                   Log In
                 </button>
@@ -157,11 +176,11 @@ const Navbar: React.FC<NavbarProps> = ({ onLoginClick, onSignUpClick }) => {
                     onSignUpClick();
                     setIsMobileMenuOpen(false);
                   }}
-                  className="block w-full text-left py-2 text-black font-medium"
+                  className="block w-full py-2.5 px-3 bg-slate-900 text-white font-medium rounded-lg hover:bg-slate-800 transition-colors text-center"
                 >
                   Sign Up
                 </button>
-              </>
+              </div>
             )}
           </div>
         </div>
