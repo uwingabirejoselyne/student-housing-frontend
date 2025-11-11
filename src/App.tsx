@@ -9,6 +9,7 @@ import ListingDetails from './pages/ListingDetails';
 import StudentDashboard from './pages/StudentDashboard';
 import LandlordDashboard from './pages/LandlordDashboard';
 import LandlordProperties from './pages/LandlordProperties';
+import LandlordTenants from './pages/LandlordTenants';
 
 // Placeholder components for student dashboard sections
 const SavedProperties = () => (
@@ -69,6 +70,7 @@ function App() {
         {/* Landlord Dashboard Routes - Without Navbar */}
         <Route path="/landlord" element={<LandlordDashboard />} />
         <Route path="/landlord/properties" element={<LandlordProperties />} />
+        <Route path="/landlord/tenants" element={<LandlordTenants />} />
       </Routes>
     </AuthProvider>
   );
