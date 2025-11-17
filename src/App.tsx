@@ -10,6 +10,7 @@ import StudentDashboard from './pages/StudentDashboard';
 import LandlordDashboard from './pages/LandlordDashboard';
 import LandlordProperties from './pages/LandlordProperties';
 import LandlordTenants from './pages/LandlordTenants';
+import LandlordPayments from './pages/LandlordPayments';
 
 // Placeholder components for student dashboard sections
 const SavedProperties = () => (
@@ -71,6 +72,7 @@ function App() {
         <Route path="/landlord" element={<LandlordDashboard />} />
         <Route path="/landlord/properties" element={<LandlordProperties />} />
         <Route path="/landlord/tenants" element={<LandlordTenants />} />
+        <Route path="/landlord/payments" element={<LandlordPayments />} />
       </Routes>
     </AuthProvider>
   );
