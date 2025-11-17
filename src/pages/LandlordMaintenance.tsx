@@ -6,6 +6,7 @@ import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { Input } from '../components/ui/Input';
+import AssignTechnicianModal, { AssignmentData } from '../components/modals/AssignTechnicianModal';
 
 // Mock Data
 const maintenanceRequests = [
@@ -132,8 +133,29 @@ const LandlordMaintenance = () => {
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterPriority, setFilterPriority] = useState('all');
   const [selectedRequest, setSelectedRequest] = useState<typeof maintenanceRequests[0] | null>(null);
+  const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+  const [requestToAssign, setRequestToAssign] = useState<typeof maintenanceRequests[0] | null>(null);
 
   const displayName = user?.name || 'Landlord';
+
+  const handleOpenAssignModal = (request: typeof maintenanceRequests[0]) => {
+    setRequestToAssign(request);
+    setIsAssignModalOpen(true);
+    setSelectedRequest(null); // Close details modal if open
+  };
+
+  const handleAssignTechnician = (assignmentData: AssignmentData) => {
+    console.log('Assigning technician to request:', requestToAssign?.id, assignmentData);
+    // In real implementation: API call to assign technician
+    // After success: refresh requests list
+    setIsAssignModalOpen(false);
+    setRequestToAssign(null);
+  };
+
+  const handleCloseAssignModal = () => {
+    setIsAssignModalOpen(false);
+    setRequestToAssign(null);
+  };
 
   // Filter requests
   const filteredRequests = maintenanceRequests.filter((request) => {
@@ -354,7 +376,14 @@ const LandlordMaintenance = () => {
                       View Details
                     </Button>
                     {request.status === 'pending' && (
-                      <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white flex-1 lg:flex-none">
+                      <Button
+                        size="sm"
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white flex-1 lg:flex-none"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenAssignModal(request);
+                        }}
+                      >
                         Assign
                       </Button>
                     )}
@@ -456,7 +485,11 @@ const LandlordMaintenance = () => {
                   Contact Tenant
                 </Button>
                 {selectedRequest.status === 'pending' && (
-                  <Button fullWidth className="bg-emerald-600 hover:bg-emerald-700">
+                  <Button
+                    fullWidth
+                    className="bg-emerald-600 hover:bg-emerald-700"
+                    onClick={() => handleOpenAssignModal(selectedRequest)}
+                  >
                     Assign Technician
                   </Button>
                 )}
@@ -469,6 +502,24 @@ const LandlordMaintenance = () => {
             </div>
           </Card>
         </div>
+      )}
+
+      {/* Assign Technician Modal */}
+      {requestToAssign && (
+        <AssignTechnicianModal
+          isOpen={isAssignModalOpen}
+          onClose={handleCloseAssignModal}
+          onAssign={handleAssignTechnician}
+          requestDetails={{
+            id: requestToAssign.id,
+            issue: requestToAssign.issue,
+            tenantName: requestToAssign.tenantName,
+            property: requestToAssign.property,
+            unit: requestToAssign.unit,
+            category: requestToAssign.category,
+            priority: requestToAssign.priority,
+          }}
+        />
       )}
     </div>
   );
