@@ -6,6 +6,7 @@ import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { Input } from '../components/ui/Input';
+import PaymentDetailsModal from '../components/modals/PaymentDetailsModal';
 
 // Mock Data
 const payments = [
@@ -127,8 +128,14 @@ const LandlordPayments = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [selectedPayment, setSelectedPayment] = useState<typeof payments[0] | null>(null);
 
   const displayName = user?.name || 'Landlord';
+
+  const handleSendReminder = (paymentId: number) => {
+    console.log('Sending payment reminder for payment:', paymentId);
+    // In real implementation: API call to send reminder email/SMS
+  };
 
   // Filter payments
   const filteredPayments = payments.filter((payment) => {
@@ -338,7 +345,11 @@ const LandlordPayments = () => {
                 </thead>
                 <tbody className="divide-y divide-slate-200">
                   {filteredPayments.map((payment) => (
-                    <tr key={payment.id} className="hover:bg-slate-50 transition-colors">
+                    <tr
+                      key={payment.id}
+                      className="hover:bg-slate-50 transition-colors cursor-pointer"
+                      onClick={() => setSelectedPayment(payment)}
+                    >
                       <td className="px-6 py-4">
                         <div>
                           <p className="font-semibold text-slate-900">{payment.tenantName}</p>
@@ -388,6 +399,20 @@ const LandlordPayments = () => {
           )}
         </main>
       </div>
+
+      {/* Payment Details Modal */}
+      {selectedPayment && (
+        <PaymentDetailsModal
+          isOpen={!!selectedPayment}
+          onClose={() => setSelectedPayment(null)}
+          payment={{
+            ...selectedPayment,
+            tenantEmail: `${selectedPayment.tenantName.toLowerCase().replace(' ', '.')}@student.edu`,
+            tenantPhone: '+250 78X XXX XXX',
+          }}
+          onSendReminder={handleSendReminder}
+        />
+      )}
     </div>
   );
 };
