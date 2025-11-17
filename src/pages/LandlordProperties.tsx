@@ -6,6 +6,7 @@ import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { Input } from '../components/ui/Input';
+import AddPropertyModal, { PropertyFormData } from '../components/modals/AddPropertyModal';
 
 // Mock Data
 const properties = [
@@ -71,8 +72,42 @@ const LandlordProperties = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('all');
+  const [isAddPropertyModalOpen, setIsAddPropertyModalOpen] = useState(false);
+  const [editingProperty, setEditingProperty] = useState<PropertyFormData | null>(null);
 
   const displayName = user?.name || 'Landlord';
+
+  const handleAddProperty = (propertyData: PropertyFormData) => {
+    console.log('Adding new property:', propertyData);
+    // In real implementation: API call to create property
+    // After success: refresh properties list
+    setIsAddPropertyModalOpen(false);
+  };
+
+  const handleEditProperty = (property: any) => {
+    // Convert property to PropertyFormData format
+    const formData: PropertyFormData = {
+      name: property.name,
+      address: property.address,
+      city: 'Kigali', // Default value
+      type: property.type,
+      totalUnits: property.totalUnits,
+      description: '',
+      amenities: [],
+      monthlyRentMin: 0,
+      monthlyRentMax: 0,
+      availableFrom: '',
+      contactEmail: '',
+      contactPhone: '',
+    };
+    setEditingProperty(formData);
+    setIsAddPropertyModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsAddPropertyModalOpen(false);
+    setEditingProperty(null);
+  };
 
   // Filter properties
   const filteredProperties = properties.filter((property) => {
@@ -110,7 +145,12 @@ const LandlordProperties = () => {
                 <h1 className="text-xl font-bold text-slate-900">Properties</h1>
               </div>
 
-              <Button icon={Plus} variant="primary" className="bg-emerald-600 hover:bg-emerald-700">
+              <Button
+                icon={Plus}
+                variant="primary"
+                className="bg-emerald-600 hover:bg-emerald-700"
+                onClick={() => setIsAddPropertyModalOpen(true)}
+              >
                 Add Property
               </Button>
             </div>
@@ -254,7 +294,13 @@ const LandlordProperties = () => {
                       <Button variant="ghost" size="sm" icon={Eye} fullWidth>
                         View
                       </Button>
-                      <Button variant="ghost" size="sm" icon={Edit} fullWidth>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        icon={Edit}
+                        fullWidth
+                        onClick={() => handleEditProperty(property)}
+                      >
                         Edit
                       </Button>
                       <Button variant="ghost" size="sm" icon={Trash2} fullWidth className="text-red-600 hover:text-red-700">
@@ -275,13 +321,25 @@ const LandlordProperties = () => {
               <p className="text-slate-600 mb-4">
                 {searchQuery ? 'Try adjusting your search criteria' : 'Get started by adding your first property'}
               </p>
-              <Button icon={Plus} className="bg-emerald-600 hover:bg-emerald-700">
+              <Button
+                icon={Plus}
+                className="bg-emerald-600 hover:bg-emerald-700"
+                onClick={() => setIsAddPropertyModalOpen(true)}
+              >
                 Add Property
               </Button>
             </div>
           )}
         </main>
       </div>
+
+      {/* Add/Edit Property Modal */}
+      <AddPropertyModal
+        isOpen={isAddPropertyModalOpen}
+        onClose={handleCloseModal}
+        onSubmit={handleAddProperty}
+        initialData={editingProperty || undefined}
+      />
     </div>
   );
 };
