@@ -1,0 +1,15 @@
+{
+  "name": "student-housing-backend",
+  "version": "1.0.0",
+  "description": "Backend API for Student Housing Platform",
+  "main": "dist/server.js",
+  "scripts": {
+    "dev": "nodemon --exec ts-node src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": ["student", "housing", "api"],
+  "author": "",
+  "license": "ISC"
+}

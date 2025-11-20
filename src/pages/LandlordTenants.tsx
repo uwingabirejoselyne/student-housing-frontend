@@ -6,6 +6,7 @@ import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { Input } from '../components/ui/Input';
+import TenantDetailsModal from '../components/modals/TenantDetailsModal';
 
 // Mock Data
 const tenants = [
@@ -113,8 +114,19 @@ const LandlordTenants = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('table');
+  const [selectedTenant, setSelectedTenant] = useState<typeof tenants[0] | null>(null);
 
   const displayName = user?.name || 'Landlord';
+
+  const handleSendMessage = (tenantId: number) => {
+    console.log('Sending message to tenant:', tenantId);
+    // In real implementation: Open messaging interface or send email
+  };
+
+  const handleViewPayments = (tenantId: number) => {
+    console.log('Viewing payments for tenant:', tenantId);
+    // In real implementation: Navigate to payments page filtered by tenant
+  };
 
   // Filter tenants
   const filteredTenants = tenants.filter((tenant) => {
@@ -326,10 +338,20 @@ const LandlordTenants = () => {
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-2">
-                            <Button variant="ghost" size="sm" icon={Eye}>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              icon={Eye}
+                              onClick={() => setSelectedTenant(tenant)}
+                            >
                               View
                             </Button>
-                            <Button variant="ghost" size="sm" icon={MessageSquare}>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              icon={MessageSquare}
+                              onClick={() => handleSendMessage(tenant.id)}
+                            >
                               Message
                             </Button>
                           </div>
@@ -401,10 +423,22 @@ const LandlordTenants = () => {
                   </div>
 
                   <div className="flex gap-2 mt-4 pt-4 border-t border-slate-200">
-                    <Button variant="ghost" size="sm" icon={Eye} fullWidth>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      icon={Eye}
+                      fullWidth
+                      onClick={() => setSelectedTenant(tenant)}
+                    >
                       View
                     </Button>
-                    <Button variant="ghost" size="sm" icon={MessageSquare} fullWidth>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      icon={MessageSquare}
+                      fullWidth
+                      onClick={() => handleSendMessage(tenant.id)}
+                    >
                       Message
                     </Button>
                   </div>
@@ -423,6 +457,30 @@ const LandlordTenants = () => {
           )}
         </main>
       </div>
+
+      {/* Tenant Details Modal */}
+      {selectedTenant && (
+        <TenantDetailsModal
+          isOpen={!!selectedTenant}
+          onClose={() => setSelectedTenant(null)}
+          tenant={{
+            ...selectedTenant,
+            tenantId: selectedTenant.studentId,
+            roomType: selectedTenant.unit.includes('Room') ? 'Single Room' : 'Apartment',
+            moveInDate: selectedTenant.checkIn,
+            leaseEndDate: selectedTenant.checkOut,
+            university: 'University of Rwanda',
+            studentId: selectedTenant.studentId,
+            emergencyContact: {
+              name: 'Parent/Guardian',
+              relationship: 'Parent',
+              phone: '+250 788 XXX XXX',
+            },
+          }}
+          onSendMessage={handleSendMessage}
+          onViewPayments={handleViewPayments}
+        />
+      )}
     </div>
   );
 };
