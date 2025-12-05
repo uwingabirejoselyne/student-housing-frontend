@@ -65,7 +65,7 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
 // Login user
 export const login = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { email, password } = req.body;
+    const { email, password, role } = req.body;
 
     // Validate input
     if (!email || !password) {
@@ -82,6 +82,15 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       res.status(401).json({
         status: 'error',
         message: 'Invalid email or password'
+      });
+      return;
+    }
+
+    // Check if role matches (if role is provided)
+    if (role && user.role !== role) {
+      res.status(403).json({
+        status: 'error',
+        message: `This account is not registered as a ${role}. Please use the correct login portal.`
       });
       return;
     }
@@ -120,11 +129,12 @@ export const login = async (req: Request, res: Response): Promise<void> => {
         token
       }
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Login error:', error);
+    const message = error instanceof Error ? error.message : 'Failed to login';
     res.status(500).json({
       status: 'error',
-      message: error.message || 'Failed to login'
+      message
     });
   }
 };

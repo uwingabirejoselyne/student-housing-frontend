@@ -62,15 +62,17 @@ function App() {
           <Route path="/listings/:id" element={<ListingDetails />} />
         </Route>
 
+        {/* Auth Routes - No Layout */}
+
         {/* Student Dashboard Routes - Without Navbar */}
-        <Route path="/student" element={<StudentDashboard />} />
+        <Route path="/studentDashboard" element={<StudentDashboard />} />
         <Route path="/student/saved" element={<SavedProperties />} />
         <Route path="/student/bookings" element={<Bookings />} />
         <Route path="/student/profile" element={<Profile />} />
         <Route path="/student/settings" element={<Settings />} />
 
         {/* Landlord Dashboard Routes - Without Navbar */}
-        <Route path="/landlord" element={<LandlordDashboard />} />
+        <Route path="/landlordDashboard" element={<LandlordDashboard />} />
         <Route path="/landlord/properties" element={<LandlordProperties />} />
         <Route path="/landlord/tenants" element={<LandlordTenants />} />
         <Route path="/landlord/payments" element={<LandlordPayments />} />

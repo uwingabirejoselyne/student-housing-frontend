@@ -54,6 +54,84 @@ Response (201):
 }
 ```
 
+#### Login
+**POST** `/api/users/login`
+
+Request body (basic login):
+```json
+{
+  "email": "john@example.com",
+  "password": "password123"
+}
+```
+
+Request body (role-based login - recommended):
+```json
+{
+  "email": "john@example.com",
+  "password": "password123",
+  "role": "student"
+}
+```
+
+**Note:** Including the `role` field ensures users login through the correct portal (student/landlord/admin). If the account role doesn't match, a 403 error is returned.
+
+Response (200):
+```json
+{
+  "status": "success",
+  "message": "Login successful",
+  "data": {
+    "user": {
+      "id": "...",
+      "name": "John Doe",
+      "email": "john@example.com",
+      "role": "student",
+      "phone": "+250788123456",
+      "university": "University of Rwanda",
+      "avatar": null,
+      "createdAt": "2024-01-01T00:00:00.000Z"
+    },
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  }
+}
+```
+
+Error Response (403 - Wrong Role):
+```json
+{
+  "status": "error",
+  "message": "This account is not registered as a landlord. Please use the correct login portal."
+}
+```
+
+#### Get Current User
+**GET** `/api/users/me`
+
+Headers:
+```
+Authorization: Bearer <token>
+```
+
+Response (200):
+```json
+{
+  "status": "success",
+  "data": {
+    "user": {
+      "id": "...",
+      "name": "John Doe",
+      "email": "john@example.com",
+      "role": "student",
+      "phone": "+250788123456",
+      "university": "University of Rwanda",
+      "avatar": null,
+      "createdAt": "2024-01-01T00:00:00.000Z"
+    }
+  }
+}
+```
+
 ## Testing with cURL
 
 ### Test Register:
@@ -68,6 +146,22 @@ curl -X POST http://localhost:5000/api/users/register \
     "phone": "+250788123456",
     "university": "University of Rwanda"
   }'
+```
+
+### Test Login:
+```bash
+curl -X POST http://localhost:5000/api/users/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "john@example.com",
+    "password": "password123"
+  }'
+```
+
+### Test Get Current User:
+```bash
+curl http://localhost:5000/api/users/me \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE"
 ```
 
 ### Test Health Check:
@@ -87,12 +181,14 @@ curl http://localhost:5000/api/health
 ```
 backend/
 ├── src/
-│   ├── controllers/       # Route controllers
+│   ├── controllers/       # Business logic
+│   ├── routes/           # Route definitions
 │   ├── models/           # Database models
 │   ├── middlewares/      # Custom middleware
 │   ├── utils/            # Utility functions
 │   └── server.ts         # Main server file
 ├── .env                  # Environment variables
+├── test-signup.http      # API test file
 ├── package.json
 └── tsconfig.json
 ```

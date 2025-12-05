@@ -12,14 +12,18 @@ export interface User {
 }
 
 export interface AuthResponse {
-  user: User;
-  token: string;
+  status: string;
   message: string;
+  data: {
+    user: User;
+    token: string;
+  };
 }
 
 export interface LoginCredentials {
   email: string;
   password: string;
+  role?: UserRole;
 }
 
 export interface RegisterData {

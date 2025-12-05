@@ -1,23 +1,35 @@
 import { api } from './api';
-import type { AuthResponse, LoginCredentials, RegisterData } from '../types/user.types';
+import type { AuthResponse, LoginCredentials, RegisterData, User } from '../types/user.types';
 
 export const authService = {
-  login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
+  login: async (credentials: LoginCredentials): Promise<{ user: User; token: string }> => {
     const { data } = await api.post<AuthResponse>('/users/login', credentials);
-    return data;
+    // Store token in localStorage
+    localStorage.setItem('token', data.data.token);
+    localStorage.setItem('user', JSON.stringify(data.data.user));
+    return data.data;
   },
 
-  register: async (userData: RegisterData): Promise<AuthResponse> => {
+  register: async (userData: RegisterData): Promise<{ user: User; token: string }> => {
     const { data } = await api.post<AuthResponse>('/users/register', userData);
-    return data;
+    // Store token in localStorage
+    localStorage.setItem('token', data.data.token);
+    localStorage.setItem('user', JSON.stringify(data.data.user));
+    return data.data;
   },
 
   logout: () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('user');
   },
 
-  getCurrentUser: async () => {
+  getCurrentUser: async (): Promise<User> => {
     const { data } = await api.get('/users/me');
-    return data;
+    return data.data.user;
+  },
+
+  getStoredUser: (): User | null => {
+    const userStr = localStorage.getItem('user');
+    return userStr ? JSON.parse(userStr) : null;
   },
 };

@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { X, Mail, Lock, Loader, Eye, EyeOff, AlertCircle, CheckCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { redirectToDashboard } from '../../utils/roleRedirect';
 import { validateLoginForm, type LoginFormErrors, hasErrors } from '../../utils/validation';
 
 interface LoginModalProps {
@@ -15,6 +17,7 @@ const LoginModal: React.FC<LoginModalProps> = ({
   onSwitchToRegister,
 }) => {
   const { login, isLoading } = useAuth();
+  const navigate = useNavigate();
 
   // Form state
   const [email, setEmail] = useState('');
@@ -103,16 +106,25 @@ const LoginModal: React.FC<LoginModalProps> = ({
       setSuccessMessage('Logging in...');
       await login({ email, password });
 
-      // Reset form
-      setEmail('');
-      setPassword('');
-      setTouched({});
-      setErrors({});
+      // Get user from local storage and redirect based on role
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        const userData = JSON.parse(storedUser);
 
-      // Close modal
-      setTimeout(() => {
+        // Reset form
+        setEmail('');
+        setPassword('');
+        setTouched({});
+        setErrors({});
+
+        // Close modal
         onClose();
-      }, 500);
+
+        // Redirect to appropriate dashboard based on user role
+        setTimeout(() => {
+          redirectToDashboard(userData.role, navigate);
+        }, 100);
+      }
     } catch (err: any) {
       setGeneralError(err.message || 'Login failed. Please try again.');
       setSuccessMessage('');
