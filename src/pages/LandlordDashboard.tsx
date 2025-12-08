@@ -9,6 +9,7 @@ import AddPropertyModal from '../components/modals/AddPropertyModal';
 import type { PropertyFormData } from '../components/modals/AddPropertyModal';
 import AddAnnouncementModal from '../components/modals/AddAnnouncementModal';
 import type { AnnouncementFormData } from '../components/modals/AddAnnouncementModal';
+import { propertyService } from '../services/propertyService';
 
 // Mock Data
 const landlordData = {
@@ -39,10 +40,36 @@ const LandlordDashboard = () => {
   const occupancyRate = Math.round((landlordData.occupiedUnits / landlordData.totalUnits) * 100);
   const collectionRate = Math.round(((landlordData.monthlyRevenue - landlordData.pendingPayments) / landlordData.monthlyRevenue) * 100);
 
-  const handleAddProperty = (propertyData: PropertyFormData) => {
-    console.log('New Property Data:', propertyData);
-    // TODO: Integrate with backend API to save property
-    alert('Property added successfully! (Integration with backend pending)');
+  const handleAddProperty = async (propertyData: PropertyFormData) => {
+    try {
+      // Clean up data before sending
+      const cleanData: any = { ...propertyData };
+
+      // Remove availableFrom if it's empty
+      if (!cleanData.availableFrom) {
+        delete cleanData.availableFrom;
+      }
+
+      console.log('Sending property data:', JSON.stringify(cleanData, null, 2));
+
+      await propertyService.createProperty(cleanData);
+      alert('Property added successfully! Students can now see it on the landing page.');
+      setIsAddPropertyModalOpen(false);
+    } catch (error: any) {
+      console.error('Full error:', error);
+      console.error('Error response:', error.response?.data);
+      console.error('Validation errors:', error.response?.data?.errors);
+
+      const errorMessage = error.response?.data?.message ||
+                          (error.response?.data?.errors ? error.response.data.errors.join(', ') : '') ||
+                          'Failed to create property. Please try again.';
+      alert(`Error: ${errorMessage}`);
+
+      // Also log to console for debugging
+      if (error.response?.data?.errors) {
+        console.log('Detailed errors:', error.response.data.errors);
+      }
+    }
   };
 
   const handleAddAnnouncement = (announcementData: any) => {

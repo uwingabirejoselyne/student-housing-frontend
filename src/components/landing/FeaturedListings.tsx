@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import ListingCard from './ListingCard';
 import type { Listing } from '../../types/listing.types';
 
@@ -89,6 +90,8 @@ const mockListings: Listing[] = [
 ];
 
 const FeaturedListings: React.FC = () => {
+  const navigate = useNavigate();
+
   const handleFavorite = (id: string) => {
     console.log('Favorited listing:', id);
     // TODO: Implement favorite functionality
@@ -97,6 +100,10 @@ const FeaturedListings: React.FC = () => {
   const handleViewDetails = (id: string) => {
     console.log('View listing details:', id);
     // TODO: Navigate to listing details page
+  };
+
+  const handleViewAllListings = () => {
+    navigate('/search');
   };
 
   return (
@@ -126,7 +133,10 @@ const FeaturedListings: React.FC = () => {
 
         {/* View All Button */}
         <div className="text-center mt-10">
-          <button className="px-6 py-3 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors">
+          <button
+            onClick={handleViewAllListings}
+            className="px-6 py-3 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors"
+          >
             View All Listings
           </button>
         </div>

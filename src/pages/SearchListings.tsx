@@ -1,102 +1,97 @@
 import React, { useState, useEffect } from 'react';
-import { Search, MapPin, Star, Filter, X, Bed, Bath } from 'lucide-react';
-import { listingService } from '../services/listingService';
-import type { Listing, SearchFilters } from '../types/listing.types';
+import { Search, MapPin, Star, Filter, X, Bed, Bath, Building2, Home, Users } from 'lucide-react';
+import { propertyService } from '../services/propertyService';
+import type { Property } from '../types/property.types';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import axios from 'axios';
 
 const SearchListings: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedUniversity, setSelectedUniversity] = useState('');
   const [selectedLocation, setSelectedLocation] = useState('');
-  const [results, setResults] = useState<Listing[]>([]);
-  const [universities, setUniversities] = useState<string[]>([]);
-  const [locations, setLocations] = useState<string[]>([]);
+  const [results, setResults] = useState<Property[]>([]);
   const [loading, setLoading] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
-  const [filters, setFilters] = useState<SearchFilters>({
+  const [filters, setFilters] = useState({
     minPrice: 0,
     maxPrice: 500000,
-    roomType: [],
+    propertyType: [] as string[],
   });
 
-  // Fetch universities and locations on mount
+  // Fetch all properties on mount
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchProperties = async () => {
+      setLoading(true);
       try {
-        const [univData, locData] = await Promise.all([
-          listingService.getUniversities(),
-          listingService.getLocations(),
-        ]);
-        setUniversities(univData);
-        setLocations(locData);
+        console.log('Fetching properties from API...');
+        const properties = await propertyService.getAllProperties();
+        console.log('Fetched properties:', properties);
+        console.log('Number of properties:', properties.length);
+        setResults(properties);
       } catch (error) {
-        console.error('Error fetching filter data:', error);
+        console.error('Error fetching properties:', error);
+        if (axios.isAxiosError(error)) {
+          console.error('Error response:', error.response?.data);
+        }
+      } finally {
+        setLoading(false);
       }
     };
-    fetchData();
+    fetchProperties();
   }, []);
 
-  // Initialize from URL parameters on mount
-  useEffect(() => {
-    const queryParam = searchParams.get('q');
-    const locationParam = searchParams.get('location');
-    const universityParam = searchParams.get('university');
-
-    if (queryParam) setSearchQuery(queryParam);
-    if (locationParam) setSelectedLocation(locationParam);
-    if (universityParam) setSelectedUniversity(universityParam);
-
-    // Auto-search if any parameters are present
-    if (queryParam || locationParam || universityParam) {
-      setTimeout(() => {
-        handleSearch();
-      }, 100);
+  // Client-side filtering of properties
+  const filteredResults = results.filter((property) => {
+    // Search query filter (name, city, or address)
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      const matchesQuery =
+        property.name.toLowerCase().includes(query) ||
+        property.city.toLowerCase().includes(query) ||
+        property.address.toLowerCase().includes(query);
+      if (!matchesQuery) return false;
     }
-  }, []);
 
-  const handleSearch = async () => {
-    setLoading(true);
-    try {
-      const searchFilters: SearchFilters = {
-        query: searchQuery || undefined,
-        university: selectedUniversity || undefined,
-        location: selectedLocation || undefined,
-        minPrice: filters.minPrice,
-        maxPrice: filters.maxPrice,
-        roomType: filters.roomType && filters.roomType.length > 0 ? filters.roomType : undefined,
-      };
-
-      const data = await listingService.searchListings(searchFilters);
-      setResults(data);
-    } catch (error) {
-      console.error('Error searching properties:', error);
-    } finally {
-      setLoading(false);
+    // Location filter
+    if (selectedLocation && property.city !== selectedLocation) {
+      return false;
     }
-  };
 
-  const handleRoomTypeToggle = (type: string) => {
+    // Price filter
+    if (property.monthlyRentMin < filters.minPrice || property.monthlyRentMax > filters.maxPrice) {
+      return false;
+    }
+
+    // Property type filter
+    if (filters.propertyType.length > 0 && !filters.propertyType.includes(property.type)) {
+      return false;
+    }
+
+    return true;
+  });
+
+  const handlePropertyTypeToggle = (type: string) => {
     setFilters((prev) => ({
       ...prev,
-      roomType: prev.roomType?.includes(type)
-        ? prev.roomType.filter((t) => t !== type)
-        : [...(prev.roomType || []), type],
+      propertyType: prev.propertyType.includes(type)
+        ? prev.propertyType.filter((t) => t !== type)
+        : [...prev.propertyType, type],
     }));
   };
 
   const clearFilters = () => {
     setSearchQuery('');
-    setSelectedUniversity('');
     setSelectedLocation('');
     setFilters({
       minPrice: 0,
       maxPrice: 500000,
-      roomType: [],
+      propertyType: [],
     });
-    setResults([]);
   };
+
+  // Get unique cities from properties
+  const availableCities = Array.from(new Set(results.map((p) => p.city)));
 
   return (
     <div className="min-h-screen bg-gray-50 pt-20">
@@ -114,48 +109,28 @@ const SearchListings: React.FC = () => {
                   <Search className="w-5 h-5 text-gray-400" />
                   <input
                     type="text"
-                    placeholder="Search by keyword..."
+                    placeholder="Search by name, city, or address..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                     className="flex-1 ml-2 py-3 bg-transparent outline-none"
                   />
                 </div>
               </div>
 
-              {/* University Filter */}
+              {/* Location/City Filter */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  University
-                </label>
-                <select
-                  value={selectedUniversity}
-                  onChange={(e) => setSelectedUniversity(e.target.value)}
-                  className="w-full px-4 py-3 bg-gray-50 rounded-lg outline-none border-none"
-                >
-                  <option value="">All Universities</option>
-                  {universities.map((uni) => (
-                    <option key={uni} value={uni}>
-                      {uni}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Location Filter */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Location
+                  City
                 </label>
                 <select
                   value={selectedLocation}
                   onChange={(e) => setSelectedLocation(e.target.value)}
                   className="w-full px-4 py-3 bg-gray-50 rounded-lg outline-none border-none"
                 >
-                  <option value="">All Locations</option>
-                  {locations.map((loc) => (
-                    <option key={loc} value={loc}>
-                      {loc}
+                  <option value="">All Cities</option>
+                  {availableCities.map((city) => (
+                    <option key={city} value={city}>
+                      {city}
                     </option>
                   ))}
                 </select>
@@ -164,20 +139,13 @@ const SearchListings: React.FC = () => {
 
             <div className="flex gap-3">
               <button
-                onClick={handleSearch}
-                disabled={loading}
-                className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800 disabled:bg-gray-400"
-              >
-                {loading ? 'Searching...' : 'Search'}
-              </button>
-              <button
                 onClick={() => setShowFilters(!showFilters)}
                 className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center"
               >
                 <Filter className="w-4 h-4 mr-2" />
                 More Filters
               </button>
-              {(searchQuery || selectedUniversity || selectedLocation || filters.roomType && filters.roomType.length > 0) && (
+              {(searchQuery || selectedLocation || filters.propertyType.length > 0) && (
                 <button
                   onClick={clearFilters}
                   className="px-4 py-2 text-red-600 hover:text-red-700 flex items-center"
@@ -191,35 +159,26 @@ const SearchListings: React.FC = () => {
         </div>
 
         {/* Active Filters */}
-        {(selectedUniversity || selectedLocation || (filters.roomType && filters.roomType.length > 0)) && (
+        {(selectedLocation || filters.propertyType.length > 0) && (
           <div className="mb-4 flex flex-wrap gap-2">
-            {selectedUniversity && (
-              <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm flex items-center">
-                University: {selectedUniversity}
-                <X
-                  className="w-4 h-4 ml-2 cursor-pointer"
-                  onClick={() => setSelectedUniversity('')}
-                />
-              </span>
-            )}
             {selectedLocation && (
               <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm flex items-center">
-                Location: {selectedLocation}
+                City: {selectedLocation}
                 <X
                   className="w-4 h-4 ml-2 cursor-pointer"
                   onClick={() => setSelectedLocation('')}
                 />
               </span>
             )}
-            {filters.roomType?.map((type) => (
+            {filters.propertyType.map((type) => (
               <span
                 key={type}
-                className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm flex items-center"
+                className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm flex items-center capitalize"
               >
                 {type}
                 <X
                   className="w-4 h-4 ml-2 cursor-pointer"
-                  onClick={() => handleRoomTypeToggle(type)}
+                  onClick={() => handlePropertyTypeToggle(type)}
                 />
               </span>
             ))}
@@ -270,19 +229,19 @@ const SearchListings: React.FC = () => {
                 </div>
               </div>
 
-              {/* Room Type */}
+              {/* Property Type */}
               <div>
-                <h4 className="font-semibold text-gray-700 mb-3">Room Type</h4>
+                <h4 className="font-semibold text-gray-700 mb-3">Property Type</h4>
                 <div className="space-y-2">
-                  {['Single', 'Shared', 'Studio', 'Apartment'].map((type) => (
+                  {['hostel', 'apartment', 'house', 'studio'].map((type) => (
                     <label key={type} className="flex items-center">
                       <input
                         type="checkbox"
-                        checked={filters.roomType?.includes(type) || false}
-                        onChange={() => handleRoomTypeToggle(type)}
+                        checked={filters.propertyType.includes(type)}
+                        onChange={() => handlePropertyTypeToggle(type)}
                         className="w-4 h-4 rounded border-gray-300"
                       />
-                      <span className="ml-2 text-sm text-gray-700">{type}</span>
+                      <span className="ml-2 text-sm text-gray-700 capitalize">{type}</span>
                     </label>
                   ))}
                 </div>
@@ -294,29 +253,39 @@ const SearchListings: React.FC = () => {
         {/* Results */}
         <div className="mb-4">
           <p className="text-gray-600">
-            {results.length > 0
-              ? `Found ${results.length} ${results.length === 1 ? 'property' : 'properties'}`
-              : loading
-              ? 'Searching...'
-              : 'No results yet. Try searching for properties.'}
+            {loading ? (
+              'Loading properties...'
+            ) : filteredResults.length > 0 ? (
+              `Found ${filteredResults.length} ${filteredResults.length === 1 ? 'property' : 'properties'}`
+            ) : results.length > 0 ? (
+              'No properties match your filters.'
+            ) : (
+              'No properties available yet.'
+            )}
           </p>
         </div>
 
         {/* Results List */}
         <div className="space-y-4">
-          {results.map((result) => (
+          {filteredResults.map((property) => (
             <div
-              key={result.id}
-              className="bg-white rounded-lg p-6 hover:shadow-md transition-shadow"
+              key={property._id}
+              className="bg-white rounded-lg p-6 hover:shadow-md transition-shadow cursor-pointer"
+              onClick={() => navigate(`/property/${property._id}`)}
             >
               <div className="flex gap-4">
-                <div className="w-48 h-40 bg-gradient-to-br from-blue-100 to-purple-100 rounded-lg flex-shrink-0">
-                  {result.images && result.images[0] && (
+                <div className="w-48 h-40 bg-gradient-to-br from-emerald-100 to-teal-100 rounded-lg flex-shrink-0 flex items-center justify-center">
+                  {property.images && property.images[0] ? (
                     <img
-                      src={result.images[0]}
-                      alt={result.title}
+                      src={property.images[0]}
+                      alt={property.name}
                       className="w-full h-full object-cover rounded-lg"
                     />
+                  ) : (
+                    <div className="text-center text-gray-400">
+                      <Building2 className="w-12 h-12 mx-auto mb-2" />
+                      <p className="text-xs">No image</p>
+                    </div>
                   )}
                 </div>
 
@@ -324,59 +293,78 @@ const SearchListings: React.FC = () => {
                   <div className="flex justify-between items-start mb-2">
                     <div>
                       <h3 className="text-xl font-semibold text-gray-900 mb-1">
-                        {result.title}
+                        {property.name}
                       </h3>
                       <p className="text-gray-600 flex items-center mb-2">
                         <MapPin className="w-4 h-4 mr-1" />
-                        {result.location}
+                        {property.address}, {property.city}
                       </p>
-                      {result.university && (
-                        <p className="text-sm text-blue-600 mb-2">
-                          Near {result.university}
-                        </p>
-                      )}
+                      <span className="px-2 py-1 bg-emerald-100 text-emerald-700 rounded text-xs capitalize font-medium">
+                        {property.type}
+                      </span>
                     </div>
                     <div className="text-right">
+                      <div className="text-xs text-gray-500 mb-1">From</div>
                       <div className="text-2xl font-bold text-gray-900">
-                        {result.price.toLocaleString()} RWF
+                        {property.monthlyRentMin.toLocaleString()} RWF
                       </div>
                       <span className="text-xs text-gray-500">per month</span>
+                      {property.monthlyRentMax !== property.monthlyRentMin && (
+                        <div className="text-xs text-gray-400 mt-1">
+                          Up to {property.monthlyRentMax.toLocaleString()} RWF
+                        </div>
+                      )}
                     </div>
                   </div>
 
                   <p className="text-gray-600 text-sm mb-3 line-clamp-2">
-                    {result.description}
+                    {property.description}
                   </p>
 
                   <div className="flex items-center space-x-4 text-sm text-gray-600 mb-3">
                     <span className="flex items-center">
-                      <Bed className="w-4 h-4 mr-1" />
-                      {result.bedrooms} bed{result.bedrooms !== 1 ? 's' : ''}
+                      <Home className="w-4 h-4 mr-1" />
+                      {property.totalUnits} units
                     </span>
                     <span className="flex items-center">
-                      <Bath className="w-4 h-4 mr-1" />
-                      {result.bathrooms} bath{result.bathrooms !== 1 ? 's' : ''}
-                    </span>
-                    <span className="px-2 py-1 bg-gray-100 rounded text-xs">
-                      {result.roomType}
-                    </span>
-                    {result.verified && (
-                      <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">
-                        Verified
-                      </span>
-                    )}
-                    <span className="flex items-center">
-                      <Star className="w-4 h-4 mr-1 text-yellow-400 fill-yellow-400" />
-                      {result.rating} ({result.reviewCount})
+                      <Users className="w-4 h-4 mr-1" />
+                      {property.totalUnits - property.occupiedUnits} available
                     </span>
                   </div>
 
-                  <button
-                    onClick={() => navigate(`/listings/${result.id}`)}
-                    className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800"
-                  >
-                    View Details
-                  </button>
+                  {/* Amenities */}
+                  {property.amenities && property.amenities.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-3">
+                      {property.amenities.slice(0, 4).map((amenity, index) => (
+                        <span
+                          key={index}
+                          className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs"
+                        >
+                          {amenity}
+                        </span>
+                      ))}
+                      {property.amenities.length > 4 && (
+                        <span className="px-2 py-1 bg-gray-100 text-gray-500 rounded text-xs">
+                          +{property.amenities.length - 4} more
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-between">
+                    <div className="text-xs text-gray-500">
+                      Contact: {property.contactPhone}
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/property/${property._id}`);
+                      }}
+                      className="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
+                    >
+                      View Details
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

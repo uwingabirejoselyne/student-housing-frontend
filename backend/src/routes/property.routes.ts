@@ -7,7 +7,7 @@ import {
   deleteProperty,
   getAllProperties
 } from '../controllers/property.controller';
-import { protect } from '../middlewares/auth.middleware';
+import { authenticate as protect } from '../middlewares/auth.middleware';
 
 const router = express.Router();
 

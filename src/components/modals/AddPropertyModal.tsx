@@ -15,13 +15,13 @@ export interface PropertyFormData {
   name: string;
   address: string;
   city: string;
-  type: string;
+  type: 'hostel' | 'apartment' | 'house' | 'studio';
   totalUnits: number;
   description: string;
   amenities: string[];
   monthlyRentMin: number;
   monthlyRentMax: number;
-  availableFrom: string;
+  availableFrom?: string;
   contactEmail: string;
   contactPhone: string;
 }

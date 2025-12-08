@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Request, Response, NextFunction } from 'express';
 import { verifyToken, TokenPayload } from '../utils/jwt';
 
@@ -31,6 +32,7 @@ export const authenticate = async (
     req.user = decoded;
 
     next();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (error: any) {
     res.status(401).json({
       status: 'error',

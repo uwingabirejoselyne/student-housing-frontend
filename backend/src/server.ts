@@ -20,6 +20,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Routes
 app.use('/api/users', authRoutes);
+app.use('/api/properties', propertyRoutes);
 
 // Basic health check route
 app.get('/api/health', (req: Request, res: Response) => {

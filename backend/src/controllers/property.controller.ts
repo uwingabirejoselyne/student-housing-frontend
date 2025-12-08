@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Request, Response } from 'express';
 import Property from '../models/Property';
 import { AuthRequest } from '../middlewares/auth.middleware';
