@@ -14,7 +14,7 @@ const LandlordSidebar: React.FC<LandlordSidebarProps> = ({ isOpen, toggleSidebar
   const navigate = useNavigate();
 
   const navItems = [
-    { icon: Home, label: 'Dashboard', path: '/landlord' },
+    { icon: Home, label: 'Dashboard', path: '/landlordDashboard' },
     { icon: Building2, label: 'Properties', path: '/landlord/properties' },
     { icon: Users, label: 'Tenants', path: '/landlord/tenants' },
     { icon: DollarSign, label: 'Payments', path: '/landlord/payments' },

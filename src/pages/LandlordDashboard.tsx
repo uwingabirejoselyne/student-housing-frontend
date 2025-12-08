@@ -1,10 +1,14 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Building2, Users, DollarSign, Wrench, Bell, Menu, Plus, TrendingUp, Home } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import Sidebar from '../components/layout/LandlordSidebar';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
+import AddPropertyModal from '../components/modals/AddPropertyModal';
+import type { PropertyFormData } from '../components/modals/AddPropertyModal';
+import AddAnnouncementModal from '../components/modals/AddAnnouncementModal';
+import type { AnnouncementFormData } from '../components/modals/AddAnnouncementModal';
 
 // Mock Data
 const landlordData = {
@@ -25,6 +29,8 @@ const landlordData = {
 const LandlordDashboard = () => {
   const { user } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isAddPropertyModalOpen, setIsAddPropertyModalOpen] = useState(false);
+  const [isAddAnnouncementModalOpen, setIsAddAnnouncementModalOpen] = useState(false);
   const newNotifications = 8;
 
   const displayName = user?.name || landlordData.name;
@@ -32,6 +38,18 @@ const LandlordDashboard = () => {
 
   const occupancyRate = Math.round((landlordData.occupiedUnits / landlordData.totalUnits) * 100);
   const collectionRate = Math.round(((landlordData.monthlyRevenue - landlordData.pendingPayments) / landlordData.monthlyRevenue) * 100);
+
+  const handleAddProperty = (propertyData: PropertyFormData) => {
+    console.log('New Property Data:', propertyData);
+    // TODO: Integrate with backend API to save property
+    alert('Property added successfully! (Integration with backend pending)');
+  };
+
+  const handleAddAnnouncement = (announcementData: any) => {
+    console.log('New Announcement Data:', announcementData);
+    // TODO: Integrate with backend API to save announcement
+    alert('Announcement created successfully! (Integration with backend pending)');
+  };
 
   return (
     <div className="flex min-h-screen bg-slate-50">
@@ -116,6 +134,7 @@ const LandlordDashboard = () => {
                   size="sm"
                   icon={Plus}
                   className="bg-white text-slate-900 hover:bg-slate-100"
+                  onClick={() => setIsAddPropertyModalOpen(true)}
                 >
                   Add Property
                 </Button>
@@ -123,6 +142,7 @@ const LandlordDashboard = () => {
                   size="sm"
                   icon={Plus}
                   className="bg-emerald-700 hover:bg-emerald-800 text-white"
+                  onClick={() => setIsAddAnnouncementModalOpen(true)}
                 >
                   New Announcement
                 </Button>
@@ -230,6 +250,19 @@ const LandlordDashboard = () => {
           </div>
         </main>
       </div>
+
+      {/* Modals */}
+      <AddPropertyModal
+        isOpen={isAddPropertyModalOpen}
+        onClose={() => setIsAddPropertyModalOpen(false)}
+        onSubmit={handleAddProperty}
+      />
+
+      <AddAnnouncementModal
+        isOpen={isAddAnnouncementModalOpen}
+        onClose={() => setIsAddAnnouncementModalOpen(false)}
+        onSubmit={handleAddAnnouncement}
+      />
     </div>
   );
 };

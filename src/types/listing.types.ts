@@ -29,6 +29,7 @@ export interface Listing {
 }
 
 export interface SearchFilters {
+  query?: string;
   location?: string;
   university?: string;
   minPrice?: number;
