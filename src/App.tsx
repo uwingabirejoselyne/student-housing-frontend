@@ -12,21 +12,13 @@ import LandlordProperties from './pages/LandlordProperties';
 import LandlordTenants from './pages/LandlordTenants';
 import LandlordPayments from './pages/LandlordPayments';
 import LandlordMaintenance from './pages/LandlordMaintenance';
+import Bookings from './pages/Bookings';
 
 // Placeholder components for student dashboard sections
 const SavedProperties = () => (
   <div className="min-h-screen bg-slate-50 flex items-center justify-center">
     <div className="text-center">
       <h2 className="text-2xl font-bold text-slate-900 mb-2">Saved Properties</h2>
-      <p className="text-slate-600">This page is under development</p>
-    </div>
-  </div>
-);
-
-const Bookings = () => (
-  <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-    <div className="text-center">
-      <h2 className="text-2xl font-bold text-slate-900 mb-2">Bookings</h2>
       <p className="text-slate-600">This page is under development</p>
     </div>
   </div>
