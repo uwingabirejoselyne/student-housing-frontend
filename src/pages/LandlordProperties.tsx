@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Building2, Users, DollarSign, Menu, Plus, Search, Filter, MapPin, Bed, Edit, Trash2, Eye, Home } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import LandlordSidebar from '../components/layout/LandlordSidebar';
@@ -7,64 +7,19 @@ import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { Input } from '../components/ui/Input';
 import AddPropertyModal, { PropertyFormData } from '../components/modals/AddPropertyModal';
+import { propertyService } from '../services/propertyService';
+import type { Property } from '../types/property.types';
 
-// Mock Data
-const properties = [
-  {
-    id: 1,
-    name: 'University Heights',
-    address: 'KN 5 Ave, Kigali',
-    type: 'Hostel',
-    totalUnits: 20,
-    occupiedUnits: 18,
-    monthlyRevenue: 3000000,
-    status: 'active',
-    imageGradient: 'from-blue-500 to-indigo-600',
-  },
-  {
-    id: 2,
-    name: 'Campus View Apartments',
-    address: 'KG 7 St, Kigali',
-    type: 'Apartment',
-    totalUnits: 12,
-    occupiedUnits: 10,
-    monthlyRevenue: 1800000,
-    status: 'active',
-    imageGradient: 'from-emerald-500 to-teal-600',
-  },
-  {
-    id: 3,
-    name: 'Student Residence Hall',
-    address: 'KN 15 Rd, Kigali',
-    type: 'Hostel',
-    totalUnits: 15,
-    occupiedUnits: 12,
-    monthlyRevenue: 1800000,
-    status: 'active',
-    imageGradient: 'from-purple-500 to-pink-600',
-  },
-  {
-    id: 4,
-    name: 'Downtown Student Suites',
-    address: 'KN 3 Ave, Kigali',
-    type: 'Apartment',
-    totalUnits: 8,
-    occupiedUnits: 7,
-    monthlyRevenue: 1050000,
-    status: 'active',
-    imageGradient: 'from-orange-500 to-red-600',
-  },
-  {
-    id: 5,
-    name: 'Riverside Hostel',
-    address: 'KG 12 St, Kigali',
-    type: 'Hostel',
-    totalUnits: 10,
-    occupiedUnits: 8,
-    monthlyRevenue: 1200000,
-    status: 'maintenance',
-    imageGradient: 'from-cyan-500 to-blue-600',
-  },
+// Gradient colors for property cards
+const gradients = [
+  'from-blue-500 to-indigo-600',
+  'from-emerald-500 to-teal-600',
+  'from-purple-500 to-pink-600',
+  'from-orange-500 to-red-600',
+  'from-cyan-500 to-blue-600',
+  'from-rose-500 to-pink-600',
+  'from-amber-500 to-orange-600',
+  'from-violet-500 to-purple-600',
 ];
 
 const LandlordProperties = () => {
@@ -74,14 +29,40 @@ const LandlordProperties = () => {
   const [filterType, setFilterType] = useState('all');
   const [isAddPropertyModalOpen, setIsAddPropertyModalOpen] = useState(false);
   const [editingProperty, setEditingProperty] = useState<PropertyFormData | null>(null);
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Fetch properties on mount
+  useEffect(() => {
+    fetchProperties();
+  }, []);
+
+  const fetchProperties = async () => {
+    try {
+      setIsLoading(true);
+      const data = await propertyService.getLandlordProperties();
+      setProperties(data);
+    } catch (error) {
+      console.error('Failed to fetch properties:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const displayName = user?.name || 'Landlord';
 
-  const handleAddProperty = (propertyData: PropertyFormData) => {
-    console.log('Adding new property:', propertyData);
-    // In real implementation: API call to create property
-    // After success: refresh properties list
-    setIsAddPropertyModalOpen(false);
+  const handleAddProperty = async (propertyData: PropertyFormData) => {
+    try {
+      await propertyService.createProperty(propertyData);
+      alert('Property added successfully!');
+      setIsAddPropertyModalOpen(false);
+      // Refresh the properties list
+      await fetchProperties();
+    } catch (error: any) {
+      console.error('Failed to add property:', error);
+      const errorMessage = error.response?.data?.message || 'Failed to add property. Please try again.';
+      alert(`Error: ${errorMessage}`);
+    }
   };
 
   const handleEditProperty = (property: any) => {
@@ -118,10 +99,11 @@ const LandlordProperties = () => {
   });
 
   const totalProperties = properties.length;
-  const totalUnits = properties.reduce((sum, p) => sum + p.totalUnits, 0);
-  const totalOccupied = properties.reduce((sum, p) => sum + p.occupiedUnits, 0);
-  const totalRevenue = properties.reduce((sum, p) => sum + p.monthlyRevenue, 0);
-  const occupancyRate = Math.round((totalOccupied / totalUnits) * 100);
+  const totalUnits = properties.reduce((sum, p) => sum + (p.totalUnits || 0), 0);
+  // For now, estimate occupancy and revenue since the API might not have this data
+  const totalOccupied = Math.round(totalUnits * 0.85); // 85% occupancy estimate
+  const totalRevenue = totalUnits * 150000; // Estimate based on average rent
+  const occupancyRate = totalUnits > 0 ? Math.round((totalOccupied / totalUnits) * 100) : 0;
 
   return (
     <div className="flex min-h-screen bg-slate-50">
@@ -222,99 +204,111 @@ const LandlordProperties = () => {
 
           {/* Properties Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredProperties.map((property) => {
-              const occupancy = Math.round((property.occupiedUnits / property.totalUnits) * 100);
+            {isLoading ? (
+              <div className="col-span-full text-center py-12">
+                <p className="text-slate-600">Loading properties...</p>
+              </div>
+            ) : (
+              filteredProperties.map((property, index) => {
+                // Assign gradient based on index
+                const gradient = gradients[index % gradients.length];
+                // Estimate occupancy (85% as default since API might not have this)
+                const estimatedOccupied = Math.round((property.totalUnits || 0) * 0.85);
+                const occupancy = property.totalUnits ? Math.round((estimatedOccupied / property.totalUnits) * 100) : 0;
+                // Estimate revenue
+                const estimatedRevenue = (property.totalUnits || 0) * 150000;
 
-              return (
-                <Card key={property.id} padding="none" hover className="overflow-hidden group">
-                  {/* Property Image Placeholder */}
-                  <div className={`h-48 bg-gradient-to-br ${property.imageGradient} flex items-center justify-center relative`}>
-                    <Building2 className="w-16 h-16 text-white opacity-50" aria-hidden="true" />
+                return (
+                  <Card key={property._id || property.id} padding="none" hover className="overflow-hidden group">
+                    {/* Property Image Placeholder */}
+                    <div className={`h-48 bg-gradient-to-br ${gradient} flex items-center justify-center relative`}>
+                      <Building2 className="w-16 h-16 text-white opacity-50" aria-hidden="true" />
 
-                    {/* Status Badge */}
-                    <div className="absolute top-4 right-4">
-                      <Badge
-                        variant={property.status === 'active' ? 'success' : 'warning'}
-                        className="capitalize"
-                      >
-                        {property.status}
-                      </Badge>
-                    </div>
-                  </div>
-
-                  {/* Property Details */}
-                  <div className="p-6">
-                    <h3 className="text-xl font-bold text-slate-900 mb-2">{property.name}</h3>
-
-                    <div className="flex items-start gap-2 text-sm text-slate-600 mb-4">
-                      <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" aria-hidden="true" />
-                      <span>{property.address}</span>
-                    </div>
-
-                    <div className="flex items-center gap-2 mb-4">
-                      <Badge variant="neutral" className="text-xs">
-                        {property.type}
-                      </Badge>
-                      <span className="text-sm text-slate-600">•</span>
-                      <span className="text-sm text-slate-600 flex items-center gap-1">
-                        <Bed className="w-4 h-4" aria-hidden="true" />
-                        {property.totalUnits} units
-                      </span>
+                      {/* Status Badge */}
+                      <div className="absolute top-4 right-4">
+                        <Badge
+                          variant="success"
+                          className="capitalize"
+                        >
+                          Active
+                        </Badge>
+                      </div>
                     </div>
 
-                    {/* Stats */}
-                    <div className="space-y-3 mb-4">
-                      <div>
-                        <div className="flex justify-between items-center mb-1">
-                          <span className="text-sm text-slate-600">Occupancy</span>
-                          <span className="text-sm font-semibold text-slate-900">
-                            {property.occupiedUnits} / {property.totalUnits}
-                          </span>
-                        </div>
-                        <div className="w-full bg-slate-200 rounded-full h-2">
-                          <div
-                            className={`h-2 rounded-full ${
-                              occupancy >= 80 ? 'bg-green-500' : occupancy >= 50 ? 'bg-yellow-500' : 'bg-red-500'
-                            }`}
-                            style={{ width: `${occupancy}%` }}
-                          />
-                        </div>
+                    {/* Property Details */}
+                    <div className="p-6">
+                      <h3 className="text-xl font-bold text-slate-900 mb-2">{property.name}</h3>
+
+                      <div className="flex items-start gap-2 text-sm text-slate-600 mb-4">
+                        <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" aria-hidden="true" />
+                        <span>{property.address}, {property.city}</span>
                       </div>
 
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-slate-600">Monthly Revenue</span>
-                        <span className="text-sm font-bold text-emerald-600">
-                          RWF {property.monthlyRevenue.toLocaleString()}
+                      <div className="flex items-center gap-2 mb-4">
+                        <Badge variant="neutral" className="text-xs">
+                          {property.type}
+                        </Badge>
+                        <span className="text-sm text-slate-600">•</span>
+                        <span className="text-sm text-slate-600 flex items-center gap-1">
+                          <Bed className="w-4 h-4" aria-hidden="true" />
+                          {property.totalUnits} units
                         </span>
                       </div>
-                    </div>
 
-                    {/* Action Buttons */}
-                    <div className="flex gap-2 pt-4 border-t border-slate-200">
-                      <Button variant="ghost" size="sm" icon={Eye} fullWidth>
-                        View
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        icon={Edit}
-                        fullWidth
-                        onClick={() => handleEditProperty(property)}
-                      >
-                        Edit
-                      </Button>
-                      <Button variant="ghost" size="sm" icon={Trash2} fullWidth className="text-red-600 hover:text-red-700">
-                        Delete
-                      </Button>
+                      {/* Stats */}
+                      <div className="space-y-3 mb-4">
+                        <div>
+                          <div className="flex justify-between items-center mb-1">
+                            <span className="text-sm text-slate-600">Occupancy (est.)</span>
+                            <span className="text-sm font-semibold text-slate-900">
+                              {estimatedOccupied} / {property.totalUnits}
+                            </span>
+                          </div>
+                          <div className="w-full bg-slate-200 rounded-full h-2">
+                            <div
+                              className={`h-2 rounded-full ${
+                                occupancy >= 80 ? 'bg-green-500' : occupancy >= 50 ? 'bg-yellow-500' : 'bg-red-500'
+                              }`}
+                              style={{ width: `${occupancy}%` }}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-slate-600">Monthly Revenue (est.)</span>
+                          <span className="text-sm font-bold text-emerald-600">
+                            RWF {estimatedRevenue.toLocaleString()}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="flex gap-2 pt-4 border-t border-slate-200">
+                        <Button variant="ghost" size="sm" icon={Eye} fullWidth>
+                          View
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          icon={Edit}
+                          fullWidth
+                          onClick={() => handleEditProperty(property)}
+                        >
+                          Edit
+                        </Button>
+                        <Button variant="ghost" size="sm" icon={Trash2} fullWidth className="text-red-600 hover:text-red-700">
+                          Delete
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                </Card>
-              );
-            })}
+                  </Card>
+                );
+              })
+            )}
           </div>
 
           {/* Empty State */}
-          {filteredProperties.length === 0 && (
+          {!isLoading && filteredProperties.length === 0 && (
             <div className="text-center py-12">
               <Building2 className="w-16 h-16 text-slate-300 mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-slate-900 mb-2">No properties found</h3>

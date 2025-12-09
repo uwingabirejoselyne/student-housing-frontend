@@ -1,4 +1,5 @@
-import { useState } from 'react';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { useState, useEffect } from 'react';
 import { Building2, Users, DollarSign, Wrench, Bell, Menu, Plus, TrendingUp, Home } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import Sidebar from '../components/layout/LandlordSidebar';
@@ -8,37 +9,51 @@ import { Badge } from '../components/ui/Badge';
 import AddPropertyModal from '../components/modals/AddPropertyModal';
 import type { PropertyFormData } from '../components/modals/AddPropertyModal';
 import AddAnnouncementModal from '../components/modals/AddAnnouncementModal';
-import type { AnnouncementFormData } from '../components/modals/AddAnnouncementModal';
 import { propertyService } from '../services/propertyService';
-
-// Mock Data
-const landlordData = {
-  name: 'John Doe',
-  landlordId: 'LL-2024-001',
-  email: 'john.doe@landlord.com',
-  phone: '+250 788 999 888',
-  totalProperties: 5,
-  totalUnits: 45,
-  occupiedUnits: 38,
-  totalTenants: 38,
-  monthlyRevenue: 6750000,
-  pendingPayments: 450000,
-  openMaintenanceRequests: 7,
-  newApplications: 3,
-};
+import type { Property } from '../types/property.types';
 
 const LandlordDashboard = () => {
   const { user } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isAddPropertyModalOpen, setIsAddPropertyModalOpen] = useState(false);
   const [isAddAnnouncementModalOpen, setIsAddAnnouncementModalOpen] = useState(false);
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const newNotifications = 8;
 
-  const displayName = user?.name || landlordData.name;
+  // Fetch properties on mount
+  useEffect(() => {
+    fetchProperties();
+  }, []);
+
+  const fetchProperties = async () => {
+    try {
+      setIsLoading(true);
+      const data = await propertyService.getLandlordProperties();
+      setProperties(data);
+    } catch (error) {
+      console.error('Failed to fetch properties:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const displayName = user?.name || 'Landlord';
   const firstName = displayName.split(' ')[0];
 
-  const occupancyRate = Math.round((landlordData.occupiedUnits / landlordData.totalUnits) * 100);
-  const collectionRate = Math.round(((landlordData.monthlyRevenue - landlordData.pendingPayments) / landlordData.monthlyRevenue) * 100);
+  // Calculate stats from real property data
+  const totalProperties = properties.length;
+  const totalUnits = properties.reduce((sum, p) => sum + (p.totalUnits || 0), 0);
+  // For now, we'll use mock data for occupancy and revenue since the API might not have this info
+  const occupiedUnits = Math.round(totalUnits * 0.85); // 85% occupancy estimate
+  const totalTenants = occupiedUnits;
+  const monthlyRevenue = totalUnits * 150000; // Estimate based on average rent
+  const pendingPayments = monthlyRevenue * 0.07; // 7% pending estimate
+  const openMaintenanceRequests = 7; // Mock data - API endpoint needed
+  const newApplications = 3; // Mock data - API endpoint needed
+
+  const occupancyRate = totalUnits > 0 ? Math.round((occupiedUnits / totalUnits) * 100) : 0;
+  const collectionRate = monthlyRevenue > 0 ? Math.round(((monthlyRevenue - pendingPayments) / monthlyRevenue) * 100) : 0;
 
   const handleAddProperty = async (propertyData: PropertyFormData) => {
     try {
@@ -55,6 +70,9 @@ const LandlordDashboard = () => {
       await propertyService.createProperty(cleanData);
       alert('Property added successfully! Students can now see it on the landing page.');
       setIsAddPropertyModalOpen(false);
+
+      // Refresh properties list to show the new property
+      await fetchProperties();
     } catch (error: any) {
       console.error('Full error:', error);
       console.error('Error response:', error.response?.data);
@@ -116,7 +134,7 @@ const LandlordDashboard = () => {
                 <div className="flex items-center gap-3">
                   <div className="text-right hidden sm:block">
                     <p className="text-sm font-medium text-slate-900">{displayName}</p>
-                    <p className="text-xs text-slate-500">{landlordData.landlordId}</p>
+                    <p className="text-xs text-slate-500">Landlord</p>
                   </div>
                   <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-bold shadow-md">
                     {displayName.charAt(0).toUpperCase()}
@@ -139,15 +157,15 @@ const LandlordDashboard = () => {
                 <div className="flex flex-wrap gap-4 text-sm">
                   <div className="flex items-center gap-2">
                     <Building2 className="w-4 h-4" aria-hidden="true" />
-                    <span>{landlordData.totalProperties} Properties</span>
+                    <span>{totalProperties} Properties</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Home className="w-4 h-4" aria-hidden="true" />
-                    <span>{landlordData.totalUnits} Total Units</span>
+                    <span>{totalUnits} Total Units</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Users className="w-4 h-4" aria-hidden="true" />
-                    <span>{landlordData.totalTenants} Active Tenants</span>
+                    <span>{totalTenants} Active Tenants</span>
                   </div>
                   <Badge variant="success" className="bg-green-500 text-white">
                     {occupancyRate}% Occupied
@@ -188,7 +206,7 @@ const LandlordDashboard = () => {
                 <TrendingUp className="w-5 h-5 text-emerald-600" aria-hidden="true" />
               </div>
               <p className="text-sm text-slate-600 mb-1">Monthly Revenue</p>
-              <p className="text-2xl font-bold text-slate-900">RWF {landlordData.monthlyRevenue.toLocaleString()}</p>
+              <p className="text-2xl font-bold text-slate-900">RWF {monthlyRevenue.toLocaleString()}</p>
               <p className="text-xs text-emerald-600 mt-1">+12% from last month</p>
             </Card>
 
@@ -200,7 +218,7 @@ const LandlordDashboard = () => {
                 </div>
               </div>
               <p className="text-sm text-slate-600 mb-1">Pending Payments</p>
-              <p className="text-2xl font-bold text-slate-900">RWF {landlordData.pendingPayments.toLocaleString()}</p>
+              <p className="text-2xl font-bold text-slate-900">RWF {pendingPayments.toLocaleString()}</p>
               <p className="text-xs text-slate-500 mt-1">{collectionRate}% collection rate</p>
             </Card>
 
@@ -213,7 +231,7 @@ const LandlordDashboard = () => {
               </div>
               <p className="text-sm text-slate-600 mb-1">Occupancy Rate</p>
               <p className="text-2xl font-bold text-slate-900">{occupancyRate}%</p>
-              <p className="text-xs text-slate-500 mt-1">{landlordData.occupiedUnits} / {landlordData.totalUnits} units occupied</p>
+              <p className="text-xs text-slate-500 mt-1">{occupiedUnits} / {totalUnits} units occupied</p>
             </Card>
 
             {/* Maintenance Requests */}
@@ -224,7 +242,7 @@ const LandlordDashboard = () => {
                 </div>
               </div>
               <p className="text-sm text-slate-600 mb-1">Maintenance Requests</p>
-              <p className="text-2xl font-bold text-slate-900">{landlordData.openMaintenanceRequests}</p>
+              <p className="text-2xl font-bold text-slate-900">{openMaintenanceRequests}</p>
               <p className="text-xs text-red-600 mt-1">Requires attention</p>
             </Card>
           </div>
@@ -235,7 +253,7 @@ const LandlordDashboard = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-slate-600 mb-1">Total Properties</p>
-                  <p className="text-3xl font-bold text-slate-900">{landlordData.totalProperties}</p>
+                  <p className="text-3xl font-bold text-slate-900">{totalProperties}</p>
                 </div>
                 <Building2 className="w-12 h-12 text-blue-600 opacity-50" aria-hidden="true" />
               </div>
@@ -245,7 +263,7 @@ const LandlordDashboard = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-slate-600 mb-1">Active Tenants</p>
-                  <p className="text-3xl font-bold text-slate-900">{landlordData.totalTenants}</p>
+                  <p className="text-3xl font-bold text-slate-900">{totalTenants}</p>
                 </div>
                 <Users className="w-12 h-12 text-emerald-600 opacity-50" aria-hidden="true" />
               </div>
@@ -255,7 +273,7 @@ const LandlordDashboard = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-slate-600 mb-1">New Applications</p>
-                  <p className="text-3xl font-bold text-slate-900">{landlordData.newApplications}</p>
+                  <p className="text-3xl font-bold text-slate-900">{newApplications}</p>
                 </div>
                 <Badge variant="warning" className="text-lg px-4 py-2">
                   Review
