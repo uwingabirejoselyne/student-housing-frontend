@@ -73,7 +73,7 @@ export const getLandlordProperties = async (req: AuthRequest, res: Response) => 
   }
 };
 
-// Get a single property by ID
+// Get a single property by ID (protected - landlord only)
 export const getPropertyById = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
@@ -97,6 +97,36 @@ export const getPropertyById = async (req: AuthRequest, res: Response) => {
     res.status(500).json({
       status: 'error',
       message: 'Failed to fetch property'
+    });
+  }
+};
+
+// Get single property by ID (public - for students/visitors to view)
+export const getPublicPropertyById = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const property = await Property.findOne({
+      _id: id,
+      status: 'active'
+    }).populate('landlordId', 'name email phone');
+
+    if (!property) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Property not found or not available'
+      });
+    }
+
+    res.status(200).json({
+      status: 'success',
+      data: property
+    });
+  } catch (error) {
+    console.error('Get public property error:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Failed to fetch property details'
     });
   }
 };

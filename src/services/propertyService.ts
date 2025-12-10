@@ -1,4 +1,4 @@
-import { api } from './api';
+import { api, publicApi } from './api';
 import type { Property, CreatePropertyData } from '../types/property.types';
 
 export const propertyService = {
@@ -14,9 +14,9 @@ export const propertyService = {
     return data.data || data;
   },
 
-  // Get a single property by ID
+  // Get a single property by ID (public endpoint)
   getPropertyById: async (id: string): Promise<Property> => {
-    const { data } = await api.get(`/properties/${id}`);
+    const { data } = await publicApi.get(`/properties/public/${id}`);
     return data.data || data;
   },
 
@@ -33,7 +33,7 @@ export const propertyService = {
 
   // Get all active properties (public - for students to browse)
   getAllProperties: async (): Promise<Property[]> => {
-    const { data } = await api.get('/properties/all');
+    const { data } = await publicApi.get('/properties/all');
     return data.data || data;
   },
 };

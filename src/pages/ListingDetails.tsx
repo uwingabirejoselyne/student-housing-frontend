@@ -1,39 +1,39 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MapPin, Star, Bed, Bath, Wifi, Shield, Phone, Mail, Heart, Share2, MapPin as MapIcon, Calendar } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import BookingModal, { BookingFormData } from '../components/modals/BookingModal';
 import { bookingService } from '../services/bookingService';
+import { propertyService } from '../services/propertyService';
+import type { Property } from '../types/property.types';
 
 const ListingDetails: React.FC = () => {
   const [isFavorited, setIsFavorited] = useState(false);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+  const [property, setProperty] = useState<Property | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
 
-  const listing = {
-    id: '1',
-    title: 'Modern Room near University of Rwanda',
-    price: 150000,
-    location: 'Remera',
-    city: 'Kigali',
-    description: 'Spacious and modern single room with excellent amenities for students.',
-    bedrooms: 1,
-    bathrooms: 1,
-    squareMeters: 25,
-    amenities: ['WiFi', 'Kitchen', 'Security', '24/7 Water', 'Parking', 'Laundry'],
-    roomType: 'single',
-    verified: true,
-    rating: 4.8,
-    reviewCount: 24,
-    images: [],
-    landlord: {
-      name: 'Jean Pierre',
-      phone: '+250788123456',
-      email: 'jean@example.com',
-      verified: true,
-    },
-    availableFrom: '2024-02-01',
+  useEffect(() => {
+    if (id) {
+      fetchProperty(id);
+    }
+  }, [id]);
+
+  const fetchProperty = async (propertyId: string) => {
+    try {
+      setIsLoading(true);
+      const data = await propertyService.getPropertyById(propertyId);
+      setProperty(data);
+    } catch (error) {
+      console.error('Failed to fetch property:', error);
+      alert('Failed to load property details');
+      navigate('/browse');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleBookNow = () => {
@@ -67,16 +67,42 @@ const ListingDetails: React.FC = () => {
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 pt-20 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-xl text-gray-600">Loading property details...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!property) {
+    return (
+      <div className="min-h-screen bg-gray-50 pt-20 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-xl text-gray-600">Property not found</p>
+          <button
+            onClick={() => navigate('/browse')}
+            className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Back to Browse
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 pt-20">
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="flex justify-between items-start mb-6">
           <div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">{listing.title}</h1>
+            <h1 className="text-4xl font-bold text-gray-900 mb-2">{property.name}</h1>
             <p className="text-gray-600 flex items-center">
               <MapPin className="w-5 h-5 mr-2" />
-              {listing.location}, {listing.city}
+              {property.address}, {property.city}
             </p>
           </div>
 
@@ -103,60 +129,42 @@ const ListingDetails: React.FC = () => {
             {/* Description */}
             <div className="bg-white rounded-lg p-6 mb-6">
               <h2 className="text-2xl font-bold text-gray-900 mb-4">About this property</h2>
-              <p className="text-gray-600 mb-6">{listing.description}</p>
+              <p className="text-gray-600 mb-6">{property.description || 'No description available.'}</p>
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                 <div>
-                  <p className="text-gray-600 text-sm">Bedrooms</p>
-                  <p className="text-2xl font-bold text-gray-900">{listing.bedrooms}</p>
-                </div>
-                <div>
-                  <p className="text-gray-600 text-sm">Bathrooms</p>
-                  <p className="text-2xl font-bold text-gray-900">{listing.bathrooms}</p>
-                </div>
-                <div>
-                  <p className="text-gray-600 text-sm">Size</p>
-                  <p className="text-2xl font-bold text-gray-900">{listing.squareMeters}m²</p>
+                  <p className="text-gray-600 text-sm">Total Units</p>
+                  <p className="text-2xl font-bold text-gray-900">{property.totalUnits}</p>
                 </div>
                 <div>
                   <p className="text-gray-600 text-sm">Type</p>
-                  <p className="text-2xl font-bold text-gray-900 capitalize">{listing.roomType}</p>
+                  <p className="text-2xl font-bold text-gray-900 capitalize">{property.type}</p>
+                </div>
+                <div>
+                  <p className="text-gray-600 text-sm">City</p>
+                  <p className="text-2xl font-bold text-gray-900">{property.city}</p>
+                </div>
+                <div>
+                  <p className="text-gray-600 text-sm">Status</p>
+                  <p className="text-2xl font-bold text-gray-900 capitalize">{property.status}</p>
                 </div>
               </div>
             </div>
 
             {/* Amenities */}
-            <div className="bg-white rounded-lg p-6 mb-6">
-              <h3 className="text-xl font-bold text-gray-900 mb-4">Amenities</h3>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                {listing.amenities.map((amenity, idx) => (
-                  <div key={idx} className="flex items-center p-3 bg-gray-50 rounded-lg">
-                    <Wifi className="w-5 h-5 text-gray-600 mr-2" />
-                    <span className="text-gray-700">{amenity}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Reviews Section */}
-            <div className="bg-white rounded-lg p-6">
-              <h3 className="text-xl font-bold text-gray-900 mb-4">Reviews</h3>
-              <div className="flex items-center mb-6">
-                <div className="flex items-center">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className={`w-5 h-5 ${i < Math.floor(listing.rating) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`} />
+            {property.amenities && property.amenities.length > 0 && (
+              <div className="bg-white rounded-lg p-6 mb-6">
+                <h3 className="text-xl font-bold text-gray-900 mb-4">Amenities</h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {property.amenities.map((amenity, idx) => (
+                    <div key={idx} className="flex items-center p-3 bg-gray-50 rounded-lg">
+                      <Wifi className="w-5 h-5 text-gray-600 mr-2" />
+                      <span className="text-gray-700">{amenity}</span>
+                    </div>
                   ))}
                 </div>
-                <span className="ml-2 text-gray-700">{listing.rating} out of 5 ({listing.reviewCount} reviews)</span>
               </div>
-              <div className="space-y-4">
-                <div className="border-t pt-4">
-                  <p className="font-semibold text-gray-900">Great location and affordable!</p>
-                  <p className="text-sm text-gray-600">Amazing property, very close to campus.</p>
-                  <p className="text-xs text-gray-500 mt-2">By Sarah K. - 2 months ago</p>
-                </div>
-              </div>
-            </div>
+            )}
           </div>
 
           {/* Right Column - Booking Card */}
@@ -164,29 +172,34 @@ const ListingDetails: React.FC = () => {
             <div className="bg-white rounded-lg p-6 sticky top-24">
               {/* Price */}
               <div className="mb-6">
-                <p className="text-gray-600 mb-1">Monthly price</p>
+                <p className="text-gray-600 mb-1">Monthly rent</p>
                 <div className="text-4xl font-bold text-gray-900">
-                  {listing.price.toLocaleString()}
+                  {property.monthlyRentMin?.toLocaleString()}
+                  {property.monthlyRentMax && property.monthlyRentMax !== property.monthlyRentMin && (
+                    <span className="text-2xl"> - {property.monthlyRentMax.toLocaleString()}</span>
+                  )}
                   <span className="text-sm text-gray-600 ml-1">RWF</span>
                 </div>
               </div>
 
-              {/* Verified Badge */}
-              {listing.verified && (
+              {/* Status Badge */}
+              {property.status === 'active' && (
                 <div className="flex items-center gap-2 mb-6 p-3 bg-green-50 rounded-lg">
                   <Shield className="w-5 h-5 text-green-600" />
-                  <span className="text-sm text-green-700">Verified Property</span>
+                  <span className="text-sm text-green-700">Active Property</span>
                 </div>
               )}
 
               {/* Available From */}
-              <div className="mb-6 p-3 bg-blue-50 rounded-lg">
-                <p className="text-sm text-gray-600">Available from</p>
-                <p className="font-semibold text-gray-900 flex items-center gap-2">
-                  <Calendar className="w-4 h-4" />
-                  {listing.availableFrom}
-                </p>
-              </div>
+              {property.availableFrom && (
+                <div className="mb-6 p-3 bg-blue-50 rounded-lg">
+                  <p className="text-sm text-gray-600">Available from</p>
+                  <p className="font-semibold text-gray-900 flex items-center gap-2">
+                    <Calendar className="w-4 h-4" />
+                    {new Date(property.availableFrom).toLocaleDateString()}
+                  </p>
+                </div>
+              )}
 
               {/* CTA Button */}
               <button
@@ -198,25 +211,27 @@ const ListingDetails: React.FC = () => {
 
               {/* Landlord Info */}
               <div className="border-t pt-6">
-                <h4 className="font-bold text-gray-900 mb-4">Landlord Information</h4>
+                <h4 className="font-bold text-gray-900 mb-4">Contact Information</h4>
                 <div className="space-y-3">
-                  <p className="text-gray-700 font-semibold">{listing.landlord.name}</p>
-                  
-                  <a
-                    href={`tel:${listing.landlord.phone}`}
-                    className="flex items-center gap-2 text-blue-600 hover:text-blue-700"
-                  >
-                    <Phone className="w-4 h-4" />
-                    {listing.landlord.phone}
-                  </a>
+                  {property.contactPhone && (
+                    <a
+                      href={`tel:${property.contactPhone}`}
+                      className="flex items-center gap-2 text-blue-600 hover:text-blue-700"
+                    >
+                      <Phone className="w-4 h-4" />
+                      {property.contactPhone}
+                    </a>
+                  )}
 
-                  <a
-                    href={`mailto:${listing.landlord.email}`}
-                    className="flex items-center gap-2 text-blue-600 hover:text-blue-700"
-                  >
-                    <Mail className="w-4 h-4" />
-                    {listing.landlord.email}
-                  </a>
+                  {property.contactEmail && (
+                    <a
+                      href={`mailto:${property.contactEmail}`}
+                      className="flex items-center gap-2 text-blue-600 hover:text-blue-700"
+                    >
+                      <Mail className="w-4 h-4" />
+                      {property.contactEmail}
+                    </a>
+                  )}
                 </div>
               </div>
             </div>
@@ -230,11 +245,11 @@ const ListingDetails: React.FC = () => {
         onClose={() => setIsBookingModalOpen(false)}
         onSubmit={handleBookingSubmit}
         property={{
-          id: listing.id,
-          name: listing.title,
-          monthlyRent: listing.price,
-          address: listing.location,
-          city: listing.city,
+          id: property._id || property.id || '',
+          name: property.name,
+          monthlyRent: property.monthlyRentMin || 0,
+          address: property.address,
+          city: property.city,
         }}
       />
     </div>

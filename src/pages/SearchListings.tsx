@@ -271,7 +271,7 @@ const SearchListings: React.FC = () => {
             <div
               key={property._id}
               className="bg-white rounded-lg p-6 hover:shadow-md transition-shadow cursor-pointer"
-              onClick={() => navigate(`/property/${property._id}`)}
+              onClick={() => navigate(`/listings/${property._id}`)}
             >
               <div className="flex gap-4">
                 <div className="w-48 h-40 bg-gradient-to-br from-emerald-100 to-teal-100 rounded-lg flex-shrink-0 flex items-center justify-center">
@@ -358,7 +358,7 @@ const SearchListings: React.FC = () => {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        navigate(`/property/${property._id}`);
+                        navigate(`/listings/${property._id}`);
                       }}
                       className="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
                     >

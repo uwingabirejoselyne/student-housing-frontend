@@ -118,7 +118,7 @@ const FeaturedListings: React.FC = () => {
   };
 
   const handleViewProperty = (propertyId: string) => {
-    navigate(`/property/${propertyId}`);
+    navigate(`/listings/${propertyId}`);
   };
 
   return (
