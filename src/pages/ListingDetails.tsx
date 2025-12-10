@@ -1,8 +1,15 @@
 import React, { useState } from 'react';
 import { MapPin, Star, Bed, Bath, Wifi, Shield, Phone, Mail, Heart, Share2, MapPin as MapIcon, Calendar } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import BookingModal, { BookingFormData } from '../components/modals/BookingModal';
+import { bookingService } from '../services/bookingService';
 
 const ListingDetails: React.FC = () => {
   const [isFavorited, setIsFavorited] = useState(false);
+  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+  const { user, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
 
   const listing = {
     id: '1',
@@ -27,6 +34,37 @@ const ListingDetails: React.FC = () => {
       verified: true,
     },
     availableFrom: '2024-02-01',
+  };
+
+  const handleBookNow = () => {
+    if (!isAuthenticated) {
+      alert('Please login to book a property');
+      // You can redirect to login or open login modal here
+      return;
+    }
+
+    if (user?.role !== 'student') {
+      alert('Only students can book properties');
+      return;
+    }
+
+    setIsBookingModalOpen(true);
+  };
+
+  const handleBookingSubmit = async (bookingData: BookingFormData) => {
+    try {
+      // Note: This will work once the backend booking API is implemented
+      await bookingService.createBooking(bookingData);
+      alert('Booking request submitted successfully! The landlord will review and confirm your booking.');
+      setIsBookingModalOpen(false);
+      // Redirect to bookings page
+      navigate('/student/bookings');
+    } catch (error: any) {
+      console.error('Failed to create booking:', error);
+      const errorMessage =
+        error.response?.data?.message || 'Failed to create booking. Please try again.';
+      alert(`Error: ${errorMessage}`);
+    }
   };
 
   return (
@@ -151,8 +189,11 @@ const ListingDetails: React.FC = () => {
               </div>
 
               {/* CTA Button */}
-              <button className="w-full py-3 bg-black text-white rounded-lg hover:bg-gray-800 font-semibold mb-3">
-                Contact Landlord
+              <button
+                onClick={handleBookNow}
+                className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold mb-3"
+              >
+                Book Now
               </button>
 
               {/* Landlord Info */}
@@ -182,6 +223,20 @@ const ListingDetails: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Booking Modal */}
+      <BookingModal
+        isOpen={isBookingModalOpen}
+        onClose={() => setIsBookingModalOpen(false)}
+        onSubmit={handleBookingSubmit}
+        property={{
+          id: listing.id,
+          name: listing.title,
+          monthlyRent: listing.price,
+          address: listing.location,
+          city: listing.city,
+        }}
+      />
     </div>
   );
 };

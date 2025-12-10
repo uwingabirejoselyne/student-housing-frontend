@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AlertCircle, Bell, Calendar, CheckCircle, Clock, CreditCard, DollarSign, Download, Edit, FileText, Wrench, Home, Mail, MapPin, Menu, Phone, Plus, Settings, User, Users } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import Sidebar from '../components/layout/Sidebar';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
+import { bookingService } from '../services/bookingService';
+import { Booking } from '../types/booking.types';
 
 // Mock Data
 const studentData = {
@@ -57,6 +59,32 @@ const StudentDashboard = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showMaintenanceModal, setShowMaintenanceModal] = useState(false);
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    fetchBookings();
+  }, []);
+
+  const fetchBookings = async () => {
+    try {
+      setIsLoading(true);
+      const data = await bookingService.getMyBookings();
+      setBookings(data);
+    } catch (error) {
+      console.error('Failed to fetch bookings:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Calculate booking statistics
+  const totalBookings = bookings.length;
+  const activeBookings = bookings.filter(b => b.status === 'confirmed').length;
+  const pendingBookings = bookings.filter(b => b.status === 'pending').length;
+  const totalSpent = bookings
+    .filter(b => b.status === 'confirmed' || b.status === 'completed')
+    .reduce((sum, b) => sum + (b.totalAmount || 0), 0);
 
   const totalPaid = paymentHistory.reduce((sum, payment) =>
     payment.status === 'Paid' ? sum + payment.amount : sum, 0
@@ -169,44 +197,44 @@ const StudentDashboard = () => {
 
           {/* Analytics Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <Card padding="md" className="border-l-4 border-green-500 slide-up">
-              <div className="flex items-center justify-between mb-2">
-                <div className="p-3 bg-green-100 rounded-lg">
-                  <DollarSign className="w-6 h-6 text-green-600" aria-hidden="true" />
-                </div>
-              </div>
-              <p className="text-sm text-slate-600 mb-1">Total Rent Paid</p>
-              <p className="text-2xl font-bold text-slate-900">RWF {totalPaid.toLocaleString()}</p>
-            </Card>
-
-            <Card padding="md" className="border-l-4 border-red-500 slide-up">
-              <div className="flex items-center justify-between mb-2">
-                <div className="p-3 bg-red-100 rounded-lg">
-                  <AlertCircle className="w-6 h-6 text-red-600" aria-hidden="true" />
-                </div>
-              </div>
-              <p className="text-sm text-slate-600 mb-1">Outstanding Balance</p>
-              <p className="text-2xl font-bold text-slate-900">RWF {outstandingBalance.toLocaleString()}</p>
-            </Card>
-
-            <Card padding="md" className="border-l-4 border-orange-500 slide-up">
-              <div className="flex items-center justify-between mb-2">
-                <div className="p-3 bg-orange-100 rounded-lg">
-                  <Wrench className="w-6 h-6 text-orange-600" aria-hidden="true" />
-                </div>
-              </div>
-              <p className="text-sm text-slate-600 mb-1">Maintenance Requests</p>
-              <p className="text-2xl font-bold text-slate-900">{openRequests} Open</p>
-            </Card>
-
             <Card padding="md" className="border-l-4 border-blue-500 slide-up">
               <div className="flex items-center justify-between mb-2">
                 <div className="p-3 bg-blue-100 rounded-lg">
-                  <Bell className="w-6 h-6 text-blue-600" aria-hidden="true" />
+                  <Home className="w-6 h-6 text-blue-600" aria-hidden="true" />
                 </div>
               </div>
-              <p className="text-sm text-slate-600 mb-1">Notifications</p>
-              <p className="text-2xl font-bold text-slate-900">{newNotifications} New</p>
+              <p className="text-sm text-slate-600 mb-1">Total Bookings</p>
+              <p className="text-2xl font-bold text-slate-900">{isLoading ? '...' : totalBookings}</p>
+            </Card>
+
+            <Card padding="md" className="border-l-4 border-green-500 slide-up">
+              <div className="flex items-center justify-between mb-2">
+                <div className="p-3 bg-green-100 rounded-lg">
+                  <CheckCircle className="w-6 h-6 text-green-600" aria-hidden="true" />
+                </div>
+              </div>
+              <p className="text-sm text-slate-600 mb-1">Active Bookings</p>
+              <p className="text-2xl font-bold text-slate-900">{isLoading ? '...' : activeBookings}</p>
+            </Card>
+
+            <Card padding="md" className="border-l-4 border-yellow-500 slide-up">
+              <div className="flex items-center justify-between mb-2">
+                <div className="p-3 bg-yellow-100 rounded-lg">
+                  <Clock className="w-6 h-6 text-yellow-600" aria-hidden="true" />
+                </div>
+              </div>
+              <p className="text-sm text-slate-600 mb-1">Pending Bookings</p>
+              <p className="text-2xl font-bold text-slate-900">{isLoading ? '...' : pendingBookings}</p>
+            </Card>
+
+            <Card padding="md" className="border-l-4 border-purple-500 slide-up">
+              <div className="flex items-center justify-between mb-2">
+                <div className="p-3 bg-purple-100 rounded-lg">
+                  <DollarSign className="w-6 h-6 text-purple-600" aria-hidden="true" />
+                </div>
+              </div>
+              <p className="text-sm text-slate-600 mb-1">Total Spent</p>
+              <p className="text-2xl font-bold text-slate-900">RWF {isLoading ? '...' : totalSpent.toLocaleString()}</p>
             </Card>
           </div>
 
