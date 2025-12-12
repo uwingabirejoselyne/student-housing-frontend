@@ -116,11 +116,18 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
+
+    let processedValue: string | number = value;
+
+    // Handle numeric fields
+    if (name === 'totalUnits' || name === 'monthlyRentMin' || name === 'monthlyRentMax') {
+      // If value is empty, keep it as 0, otherwise parse it
+      processedValue = value === '' ? 0 : (parseInt(value, 10) || 0);
+    }
+
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'totalUnits' || name === 'monthlyRentMin' || name === 'monthlyRentMax'
-        ? parseInt(value) || 0
-        : value,
+      [name]: processedValue,
     }));
 
     // Clear error when user types

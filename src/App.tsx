@@ -12,6 +12,7 @@ import LandlordProperties from './pages/LandlordProperties';
 import LandlordTenants from './pages/LandlordTenants';
 import LandlordPayments from './pages/LandlordPayments';
 import LandlordMaintenance from './pages/LandlordMaintenance';
+import LandlordBookings from './pages/LandlordBookings';
 import Bookings from './pages/Bookings';
 
 // Placeholder components for student dashboard sections
@@ -66,6 +67,7 @@ function App() {
         {/* Landlord Dashboard Routes - Without Navbar */}
         <Route path="/landlordDashboard" element={<LandlordDashboard />} />
         <Route path="/landlord/properties" element={<LandlordProperties />} />
+        <Route path="/landlord/bookings" element={<LandlordBookings />} />
         <Route path="/landlord/tenants" element={<LandlordTenants />} />
         <Route path="/landlord/payments" element={<LandlordPayments />} />
         <Route path="/landlord/maintenance" element={<LandlordMaintenance />} />
