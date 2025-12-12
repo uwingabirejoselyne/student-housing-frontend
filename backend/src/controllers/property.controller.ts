@@ -179,14 +179,28 @@ export const deleteProperty = async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
     const landlordId = req.user?.userId;
 
-    const property = await Property.findOneAndDelete({ _id: id, landlordId });
+    // First find the property to get image URLs before deleting
+    const property = await Property.findOne({ _id: id, landlordId });
 
     if (!property) {
       return res.status(404).json({
         status: 'error',
-        message: 'Property not found'
+        message: 'Property not found or you do not have permission to delete it'
       });
     }
+
+    // Delete the property from database
+    await Property.findOneAndDelete({ _id: id, landlordId });
+
+    // TODO: Optionally delete images from Cloudinary
+    // This can be implemented later if needed
+    // if (property.images && property.images.length > 0) {
+    //   const cloudinary = require('../config/cloudinary').default;
+    //   for (const imageUrl of property.images) {
+    //     const publicId = extractPublicIdFromUrl(imageUrl);
+    //     await cloudinary.uploader.destroy(publicId);
+    //   }
+    // }
 
     res.status(200).json({
       status: 'success',

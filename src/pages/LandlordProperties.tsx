@@ -31,6 +31,7 @@ const LandlordProperties = () => {
   const [editingProperty, setEditingProperty] = useState<PropertyFormData | null>(null);
   const [properties, setProperties] = useState<Property[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [deletingPropertyId, setDeletingPropertyId] = useState<string | null>(null);
 
   // Fetch properties on mount
   useEffect(() => {
@@ -88,6 +89,36 @@ const LandlordProperties = () => {
   const handleCloseModal = () => {
     setIsAddPropertyModalOpen(false);
     setEditingProperty(null);
+  };
+
+  const handleDeleteProperty = async (propertyId: string, propertyName: string) => {
+    const confirmed = window.confirm(
+      `Are you sure you want to delete "${propertyName}"?\n\nThis action cannot be undone. All property data, including images and bookings, will be permanently removed.`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setDeletingPropertyId(propertyId);
+
+    try {
+      await propertyService.deleteProperty(propertyId);
+
+      // Remove from local state immediately for better UX
+      setProperties(prev => prev.filter(p => p._id !== propertyId));
+
+      alert('✓ Property deleted successfully!');
+    } catch (error: any) {
+      console.error('Failed to delete property:', error);
+      const errorMessage = error.response?.data?.message || 'Failed to delete property. Please try again.';
+      alert(`✗ Error: ${errorMessage}`);
+
+      // Refresh properties list to sync with server state
+      await fetchProperties();
+    } finally {
+      setDeletingPropertyId(null);
+    }
   };
 
   // Filter properties
@@ -202,128 +233,168 @@ const LandlordProperties = () => {
             </div>
           </Card>
 
-          {/* Properties Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* Properties Table */}
+          <Card padding="none" className="overflow-hidden">
             {isLoading ? (
-              <div className="col-span-full text-center py-12">
+              <div className="text-center py-12">
                 <p className="text-slate-600">Loading properties...</p>
               </div>
+            ) : filteredProperties.length === 0 ? (
+              <div className="text-center py-12">
+                <Building2 className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-slate-900 mb-2">No properties found</h3>
+                <p className="text-slate-600 mb-4">
+                  {searchQuery || filterType !== 'all'
+                    ? 'Try adjusting your search or filters'
+                    : 'Get started by adding your first property'}
+                </p>
+                <Button
+                  variant="primary"
+                  icon={Plus}
+                  className="bg-emerald-600 hover:bg-emerald-700"
+                  onClick={() => setIsAddPropertyModalOpen(true)}
+                >
+                  Add Property
+                </Button>
+              </div>
             ) : (
-              filteredProperties.map((property, index) => {
-                // Assign gradient based on index
-                const gradient = gradients[index % gradients.length];
-                // Estimate occupancy (85% as default since API might not have this)
-                const estimatedOccupied = Math.round((property.totalUnits || 0) * 0.85);
-                const occupancy = property.totalUnits ? Math.round((estimatedOccupied / property.totalUnits) * 100) : 0;
-                // Estimate revenue
-                const estimatedRevenue = (property.totalUnits || 0) * 150000;
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-slate-50 border-b border-slate-200">
+                    <tr>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                        Property
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                        Type
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                        Location
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                        Units
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                        Rent Range
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-6 py-4 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-slate-200">
+                    {filteredProperties.map((property) => {
+                      const availableUnits = (property.totalUnits || 0) - (property.occupiedUnits || 0);
 
-                return (
-                  <Card key={property._id || property.id} padding="none" hover className="overflow-hidden group">
-                    {/* Property Image Placeholder */}
-                    <div className={`h-48 bg-gradient-to-br ${gradient} flex items-center justify-center relative`}>
-                      <Building2 className="w-16 h-16 text-white opacity-50" aria-hidden="true" />
+                      return (
+                        <tr key={property._id || property.id} className="hover:bg-slate-50 transition-colors">
+                          {/* Property Name & Image */}
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center gap-3">
+                              <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center flex-shrink-0">
+                                {property.images && property.images.length > 0 ? (
+                                  <img
+                                    src={property.images[0]}
+                                    alt={property.name}
+                                    className="w-12 h-12 rounded-lg object-cover"
+                                  />
+                                ) : (
+                                  <Building2 className="w-6 h-6 text-white" />
+                                )}
+                              </div>
+                              <div>
+                                <div className="font-semibold text-slate-900">{property.name}</div>
+                                <div className="text-sm text-slate-500">{property.address}</div>
+                              </div>
+                            </div>
+                          </td>
 
-                      {/* Status Badge */}
-                      <div className="absolute top-4 right-4">
-                        <Badge
-                          variant="success"
-                          className="capitalize"
-                        >
-                          Active
-                        </Badge>
-                      </div>
-                    </div>
+                          {/* Type */}
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <Badge variant="neutral" className="capitalize">
+                              {property.type}
+                            </Badge>
+                          </td>
 
-                    {/* Property Details */}
-                    <div className="p-6">
-                      <h3 className="text-xl font-bold text-slate-900 mb-2">{property.name}</h3>
+                          {/* Location */}
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center gap-1 text-sm text-slate-600">
+                              <MapPin className="w-4 h-4" />
+                              {property.city}
+                            </div>
+                          </td>
 
-                      <div className="flex items-start gap-2 text-sm text-slate-600 mb-4">
-                        <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" aria-hidden="true" />
-                        <span>{property.address}, {property.city}</span>
-                      </div>
+                          {/* Units */}
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm">
+                              <div className="font-semibold text-slate-900">{property.totalUnits} total</div>
+                              <div className="text-slate-500">{availableUnits} available</div>
+                            </div>
+                          </td>
 
-                      <div className="flex items-center gap-2 mb-4">
-                        <Badge variant="neutral" className="text-xs">
-                          {property.type}
-                        </Badge>
-                        <span className="text-sm text-slate-600">•</span>
-                        <span className="text-sm text-slate-600 flex items-center gap-1">
-                          <Bed className="w-4 h-4" aria-hidden="true" />
-                          {property.totalUnits} units
-                        </span>
-                      </div>
+                          {/* Rent Range */}
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm font-semibold text-slate-900">
+                              {property.monthlyRentMin?.toLocaleString()} RWF
+                              {property.monthlyRentMax && property.monthlyRentMax !== property.monthlyRentMin && (
+                                <span className="text-slate-500"> - {property.monthlyRentMax.toLocaleString()} RWF</span>
+                              )}
+                            </div>
+                            <div className="text-xs text-slate-500">per month</div>
+                          </td>
 
-                      {/* Stats */}
-                      <div className="space-y-3 mb-4">
-                        <div>
-                          <div className="flex justify-between items-center mb-1">
-                            <span className="text-sm text-slate-600">Occupancy (est.)</span>
-                            <span className="text-sm font-semibold text-slate-900">
-                              {estimatedOccupied} / {property.totalUnits}
-                            </span>
-                          </div>
-                          <div className="w-full bg-slate-200 rounded-full h-2">
-                            <div
-                              className={`h-2 rounded-full ${
-                                occupancy >= 80 ? 'bg-green-500' : occupancy >= 50 ? 'bg-yellow-500' : 'bg-red-500'
-                              }`}
-                              style={{ width: `${occupancy}%` }}
-                            />
-                          </div>
-                        </div>
+                          {/* Status */}
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <Badge
+                              variant={property.status === 'active' ? 'success' : 'neutral'}
+                              className="capitalize"
+                            >
+                              {property.status}
+                            </Badge>
+                          </td>
 
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm text-slate-600">Monthly Revenue (est.)</span>
-                          <span className="text-sm font-bold text-emerald-600">
-                            RWF {estimatedRevenue.toLocaleString()}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Action Buttons */}
-                      <div className="flex gap-2 pt-4 border-t border-slate-200">
-                        <Button variant="ghost" size="sm" icon={Eye} fullWidth>
-                          View
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          icon={Edit}
-                          fullWidth
-                          onClick={() => handleEditProperty(property)}
-                        >
-                          Edit
-                        </Button>
-                        <Button variant="ghost" size="sm" icon={Trash2} fullWidth className="text-red-600 hover:text-red-700">
-                          Delete
-                        </Button>
-                      </div>
-                    </div>
-                  </Card>
-                );
-              })
+                          {/* Actions */}
+                          <td className="px-6 py-4 whitespace-nowrap text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <button
+                                onClick={() => window.location.href = `/listings/${property._id}`}
+                                className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                title="View Property"
+                              >
+                                <Eye className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleEditProperty(property)}
+                                className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                                title="Edit Property"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteProperty(property._id, property.name)}
+                                disabled={deletingPropertyId === property._id}
+                                className={`p-2 rounded-lg transition-colors ${
+                                  deletingPropertyId === property._id
+                                    ? 'text-red-400 bg-red-50 cursor-not-allowed'
+                                    : 'text-red-600 hover:bg-red-50'
+                                }`}
+                                title={deletingPropertyId === property._id ? 'Deleting...' : 'Delete Property'}
+                              >
+                                <Trash2 className={`w-4 h-4 ${deletingPropertyId === property._id ? 'animate-pulse' : ''}`} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             )}
-          </div>
-
-          {/* Empty State */}
-          {!isLoading && filteredProperties.length === 0 && (
-            <div className="text-center py-12">
-              <Building2 className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-slate-900 mb-2">No properties found</h3>
-              <p className="text-slate-600 mb-4">
-                {searchQuery ? 'Try adjusting your search criteria' : 'Get started by adding your first property'}
-              </p>
-              <Button
-                icon={Plus}
-                className="bg-emerald-600 hover:bg-emerald-700"
-                onClick={() => setIsAddPropertyModalOpen(true)}
-              >
-                Add Property
-              </Button>
-            </div>
-          )}
+          </Card>
         </main>
       </div>
 
