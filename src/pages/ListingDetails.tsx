@@ -124,7 +124,42 @@ const ListingDetails: React.FC = () => {
           {/* Left Column */}
           <div className="lg:col-span-2">
             {/* Images */}
-            <div className="bg-gradient-to-br from-blue-100 to-purple-100 h-96 rounded-lg mb-6"></div>
+            <div className="mb-6">
+              {property.images && property.images.length > 0 ? (
+                <div className="space-y-4">
+                  {/* Main Image */}
+                  <div className="h-96 rounded-lg overflow-hidden">
+                    <img
+                      src={property.images[0]}
+                      alt={property.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+
+                  {/* Thumbnail Gallery */}
+                  {property.images.length > 1 && (
+                    <div className="grid grid-cols-4 gap-4">
+                      {property.images.slice(1, 5).map((image, idx) => (
+                        <div key={idx} className="h-24 rounded-lg overflow-hidden cursor-pointer hover:opacity-80 transition-opacity">
+                          <img
+                            src={image}
+                            alt={`${property.name} ${idx + 2}`}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="bg-gradient-to-br from-blue-100 to-purple-100 h-96 rounded-lg flex items-center justify-center">
+                  <div className="text-center">
+                    <MapIcon className="w-16 h-16 text-blue-400 mx-auto mb-2" />
+                    <p className="text-gray-600">No images available</p>
+                  </div>
+                </div>
+              )}
+            </div>
 
             {/* Description */}
             <div className="bg-white rounded-lg p-6 mb-6">
