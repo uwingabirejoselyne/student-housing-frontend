@@ -1,15 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Building2, MapPin, DollarSign, Home, Image as ImageIcon, Upload, Trash2 } from 'lucide-react';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { uploadService } from '../../services/uploadService';
+import type { Property } from '../../types/property.types';
 
 interface AddPropertyModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (propertyData: PropertyFormData) => void;
-  initialData?: PropertyFormData | null;
+  initialData?: Property | null;
 }
 
 export interface PropertyFormData {
@@ -53,9 +54,52 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
   );
 
   const [errors, setErrors] = useState<Partial<Record<keyof PropertyFormData, string>>>({});
-  const [selectedAmenities, setSelectedAmenities] = useState<string[]>(initialData?.amenities || []);
-  const [uploadedImages, setUploadedImages] = useState<string[]>(initialData?.images || []);
+  const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
+  const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+
+  // Update form when initialData changes (for editing)
+  useEffect(() => {
+    if (initialData) {
+      setFormData({
+        name: initialData.name || '',
+        address: initialData.address || '',
+        city: initialData.city || '',
+        type: initialData.type || 'hostel',
+        totalUnits: initialData.totalUnits || 1,
+        description: initialData.description || '',
+        amenities: initialData.amenities || [],
+        monthlyRentMin: initialData.monthlyRentMin || 0,
+        monthlyRentMax: initialData.monthlyRentMax || 0,
+        availableFrom: initialData.availableFrom || '',
+        contactEmail: initialData.contactEmail || '',
+        contactPhone: initialData.contactPhone || '',
+        images: initialData.images || [],
+      });
+      setSelectedAmenities(initialData.amenities || []);
+      setUploadedImages(initialData.images || []);
+    } else {
+      // Reset form for new property
+      setFormData({
+        name: '',
+        address: '',
+        city: '',
+        type: 'hostel',
+        totalUnits: 1,
+        description: '',
+        amenities: [],
+        monthlyRentMin: 0,
+        monthlyRentMax: 0,
+        availableFrom: '',
+        contactEmail: '',
+        contactPhone: '',
+        images: [],
+      });
+      setSelectedAmenities([]);
+      setUploadedImages([]);
+    }
+    setErrors({});
+  }, [initialData]);
 
   const availableAmenities = [
     'WiFi',

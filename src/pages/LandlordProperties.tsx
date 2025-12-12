@@ -28,7 +28,7 @@ const LandlordProperties = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('all');
   const [isAddPropertyModalOpen, setIsAddPropertyModalOpen] = useState(false);
-  const [editingProperty, setEditingProperty] = useState<PropertyFormData | null>(null);
+  const [editingProperty, setEditingProperty] = useState<Property | null>(null);
   const [properties, setProperties] = useState<Property[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [deletingPropertyId, setDeletingPropertyId] = useState<string | null>(null);
@@ -54,35 +54,29 @@ const LandlordProperties = () => {
 
   const handleAddProperty = async (propertyData: PropertyFormData) => {
     try {
-      await propertyService.createProperty(propertyData);
-      alert('Property added successfully!');
+      if (editingProperty) {
+        // Update existing property
+        await propertyService.updateProperty(editingProperty._id, propertyData);
+        alert('✓ Property updated successfully!');
+      } else {
+        // Create new property
+        await propertyService.createProperty(propertyData);
+        alert('✓ Property added successfully!');
+      }
+
       setIsAddPropertyModalOpen(false);
+      setEditingProperty(null);
       // Refresh the properties list
       await fetchProperties();
-    } catch (error: any) {
-      console.error('Failed to add property:', error);
-      const errorMessage = error.response?.data?.message || 'Failed to add property. Please try again.';
-      alert(`Error: ${errorMessage}`);
+    } catch (error) {
+      console.error('Failed to save property:', error);
+      const errorMessage = (error as { response?: { data?: { message?: string } } }).response?.data?.message || 'Failed to save property. Please try again.';
+      alert(`✗ Error: ${errorMessage}`);
     }
   };
 
-  const handleEditProperty = (property: any) => {
-    // Convert property to PropertyFormData format
-    const formData: PropertyFormData = {
-      name: property.name,
-      address: property.address,
-      city: 'Kigali', // Default value
-      type: property.type,
-      totalUnits: property.totalUnits,
-      description: '',
-      amenities: [],
-      monthlyRentMin: 0,
-      monthlyRentMax: 0,
-      availableFrom: '',
-      contactEmail: '',
-      contactPhone: '',
-    };
-    setEditingProperty(formData);
+  const handleEditProperty = (property: Property) => {
+    setEditingProperty(property);
     setIsAddPropertyModalOpen(true);
   };
 
