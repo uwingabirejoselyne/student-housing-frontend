@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import connectDB from './utils/database';
 import authRoutes from './routes/auth.routes';
 import propertyRoutes from './routes/property.routes';
+import uploadRoutes from './routes/upload.routes';
 
 dotenv.config();
 
@@ -21,6 +22,7 @@ app.use(express.urlencoded({ extended: true }));
 // Routes
 app.use('/api/users', authRoutes);
 app.use('/api/properties', propertyRoutes);
+app.use('/api/upload', uploadRoutes);
 
 // Basic health check route
 app.get('/api/health', (req: Request, res: Response) => {

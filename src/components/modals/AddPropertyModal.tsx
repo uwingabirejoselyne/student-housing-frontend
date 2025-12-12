@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { X, Building2, MapPin, DollarSign, Home, Image as ImageIcon } from 'lucide-react';
+import { X, Building2, MapPin, DollarSign, Home, Image as ImageIcon, Upload, Trash2 } from 'lucide-react';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
+import { uploadService } from '../../services/uploadService';
 
 interface AddPropertyModalProps {
   isOpen: boolean;
@@ -24,6 +25,7 @@ export interface PropertyFormData {
   availableFrom?: string;
   contactEmail: string;
   contactPhone: string;
+  images?: string[];
 }
 
 const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
@@ -46,11 +48,14 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
       availableFrom: '',
       contactEmail: '',
       contactPhone: '',
+      images: [],
     }
   );
 
   const [errors, setErrors] = useState<Partial<Record<keyof PropertyFormData, string>>>({});
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>(initialData?.amenities || []);
+  const [uploadedImages, setUploadedImages] = useState<string[]>(initialData?.images || []);
+  const [isUploading, setIsUploading] = useState(false);
 
   const availableAmenities = [
     'WiFi',
@@ -88,6 +93,28 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
     );
   };
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setIsUploading(true);
+    try {
+      const fileArray = Array.from(files);
+      const uploadedUrls = await uploadService.uploadImages(fileArray);
+      const urls = uploadedUrls.map(img => img.url);
+      setUploadedImages(prev => [...prev, ...urls]);
+    } catch (error) {
+      console.error('Image upload failed:', error);
+      alert('Failed to upload images. Please try again.');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const removeImage = (index: number) => {
+    setUploadedImages(prev => prev.filter((_, i) => i !== index));
+  };
+
   const validateForm = (): boolean => {
     const newErrors: Partial<Record<keyof PropertyFormData, string>> = {};
 
@@ -115,6 +142,7 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
     const submitData = {
       ...formData,
       amenities: selectedAmenities,
+      images: uploadedImages,
     };
 
     onSubmit(submitData);
@@ -352,17 +380,58 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
               </div>
             </div>
 
-            {/* Images Placeholder */}
+            {/* Property Images */}
             <div>
               <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
                 <ImageIcon className="w-5 h-5 text-emerald-600" aria-hidden="true" />
                 Property Images
               </h3>
-              <div className="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center hover:border-emerald-400 transition-colors cursor-pointer">
-                <ImageIcon className="w-12 h-12 text-slate-400 mx-auto mb-3" aria-hidden="true" />
-                <p className="text-sm text-slate-600 mb-1">Click to upload or drag and drop</p>
-                <p className="text-xs text-slate-500">PNG, JPG up to 10MB (Coming soon)</p>
-              </div>
+
+              {/* Upload Area */}
+              <label
+                htmlFor="image-upload"
+                className={`border-2 border-dashed border-slate-300 rounded-lg p-8 text-center hover:border-emerald-400 transition-colors cursor-pointer block ${
+                  isUploading ? 'opacity-50 pointer-events-none' : ''
+                }`}
+              >
+                <input
+                  id="image-upload"
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                  disabled={isUploading}
+                />
+                <Upload className="w-12 h-12 text-slate-400 mx-auto mb-3" aria-hidden="true" />
+                <p className="text-sm text-slate-600 mb-1">
+                  {isUploading ? 'Uploading...' : 'Click to upload or drag and drop'}
+                </p>
+                <p className="text-xs text-slate-500">PNG, JPG up to 5MB</p>
+              </label>
+
+              {/* Uploaded Images Preview */}
+              {uploadedImages.length > 0 && (
+                <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {uploadedImages.map((url, index) => (
+                    <div key={index} className="relative group">
+                      <img
+                        src={url}
+                        alt={`Property ${index + 1}`}
+                        className="w-full h-32 object-cover rounded-lg"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeImage(index)}
+                        className="absolute top-2 right-2 p-1.5 bg-red-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                        aria-label={`Remove image ${index + 1}`}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
