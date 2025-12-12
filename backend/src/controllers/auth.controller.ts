@@ -1,176 +1,81 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Request, Response } from 'express';
-import User from '../models/User';
-import { generateToken } from '../utils/jwt';
+import authService from '../services/auth.service';
 
-// Register new user
+/**
+ * Register new user
+ */
 export const signup = async (req: Request, res: Response): Promise<void> => {
   try {
     const { name, email, password, role, phone, university } = req.body;
 
-    // Check if user already exists
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      res.status(400).json({
-        status: 'error',
-        message: 'User with this email already exists'
-      });
-      return;
-    }
-
-    // Create new user
-    const user = await User.create({
+    const result = await authService.signup({
       name,
       email,
       password,
-      role: role || 'student',
+      role,
       phone,
       university
-    });
-
-    // Generate JWT token
-    const token = generateToken({
-      userId: user._id.toString(),
-      email: user.email,
-      role: user.role
     });
 
     res.status(201).json({
       status: 'success',
       message: 'User registered successfully',
-      data: {
-        user: {
-          id: user._id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-          phone: user.phone,
-          university: user.university,
-          avatar: user.avatar,
-          createdAt: user.createdAt
-        },
-        token
-      }
+      data: result
     });
-  } catch (error: unknown) {
+  } catch (error: any) {
     console.error('Signup error:', error);
-    const message = error instanceof Error ? error.message : 'Failed to register user';
-    res.status(500).json({
+    const statusCode = error.message.includes('already exists') ? 400 : 500;
+    res.status(statusCode).json({
       status: 'error',
-      message
+      message: error.message || 'Failed to register user'
     });
   }
 };
 
-// Login user
+/**
+ * Login user
+ */
 export const login = async (req: Request, res: Response): Promise<void> => {
   try {
     const { email, password, role } = req.body;
 
-    // Validate input
-    if (!email || !password) {
-      res.status(400).json({
-        status: 'error',
-        message: 'Please provide email and password'
-      });
-      return;
-    }
-
-    // Find user and include password field
-    const user = await User.findOne({ email }).select('+password');
-    if (!user) {
-      res.status(401).json({
-        status: 'error',
-        message: 'Invalid email or password'
-      });
-      return;
-    }
-
-    // Check if role matches (if role is provided)
-    if (role && user.role !== role) {
-      res.status(403).json({
-        status: 'error',
-        message: `This account is not registered as a ${role}. Please use the correct login portal.`
-      });
-      return;
-    }
-
-    // Check password
-    const isPasswordCorrect = await user.comparePassword(password);
-    if (!isPasswordCorrect) {
-      res.status(401).json({
-        status: 'error',
-        message: 'Invalid email or password'
-      });
-      return;
-    }
-
-    // Generate JWT token
-    const token = generateToken({
-      userId: user._id.toString(),
-      email: user.email,
-      role: user.role
-    });
+    const result = await authService.login({ email, password, role });
 
     res.status(200).json({
       status: 'success',
       message: 'Login successful',
-      data: {
-        user: {
-          id: user._id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-          phone: user.phone,
-          university: user.university,
-          avatar: user.avatar,
-          createdAt: user.createdAt
-        },
-        token
-      }
+      data: result
     });
-  } catch (error: unknown) {
+  } catch (error: any) {
     console.error('Login error:', error);
-    const message = error instanceof Error ? error.message : 'Failed to login';
-    res.status(500).json({
+    const statusCode = error.statusCode ||
+                       (error.message.includes('Invalid') ? 401 :
+                        error.message.includes('provide') ? 400 : 500);
+    res.status(statusCode).json({
       status: 'error',
-      message
+      message: error.message || 'Failed to login'
     });
   }
 };
 
-// Get current user profile
+/**
+ * Get current user profile
+ */
 export const getProfile = async (req: Request, res: Response): Promise<void> => {
   try {
     const userId = (req as any).user.userId;
 
-    const user = await User.findById(userId);
-    if (!user) {
-      res.status(404).json({
-        status: 'error',
-        message: 'User not found'
-      });
-      return;
-    }
+    const result = await authService.getProfile(userId);
 
     res.status(200).json({
       status: 'success',
-      data: {
-        user: {
-          id: user._id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-          phone: user.phone,
-          university: user.university,
-          avatar: user.avatar,
-          createdAt: user.createdAt
-        }
-      }
+      data: result
     });
   } catch (error: any) {
     console.error('Get profile error:', error);
-    res.status(500).json({
+    const statusCode = error.message.includes('not found') ? 404 : 500;
+    res.status(statusCode).json({
       status: 'error',
       message: error.message || 'Failed to get profile'
     });

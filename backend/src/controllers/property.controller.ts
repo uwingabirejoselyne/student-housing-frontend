@@ -1,26 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Request, Response } from 'express';
-import Property from '../models/Property';
 import { AuthRequest } from '../middlewares/auth.middleware';
+import propertyService from '../services/property.service';
 
-// Create a new property
+/**
+ * Create a new property
+ */
 export const createProperty = async (req: AuthRequest, res: Response) => {
   try {
     const landlordId = req.user?.userId;
 
-    if (!landlordId) {
-      return res.status(401).json({
-        status: 'error',
-        message: 'Unauthorized'
-      });
-    }
-
-    const propertyData = {
-      ...req.body,
-      landlordId
-    };
-
-    const property = await Property.create(propertyData);
+    const property = await propertyService.createProperty(landlordId!, req.body);
 
     res.status(201).json({
       status: 'success',
@@ -45,19 +35,14 @@ export const createProperty = async (req: AuthRequest, res: Response) => {
   }
 };
 
-// Get all properties for a landlord
+/**
+ * Get all properties for a landlord
+ */
 export const getLandlordProperties = async (req: AuthRequest, res: Response) => {
   try {
     const landlordId = req.user?.userId;
 
-    if (!landlordId) {
-      return res.status(401).json({
-        status: 'error',
-        message: 'Unauthorized'
-      });
-    }
-
-    const properties = await Property.find({ landlordId }).sort({ createdAt: -1 });
+    const properties = await propertyService.getLandlordProperties(landlordId!);
 
     res.status(200).json({
       status: 'success',
@@ -73,82 +58,62 @@ export const getLandlordProperties = async (req: AuthRequest, res: Response) => 
   }
 };
 
-// Get a single property by ID (protected - landlord only)
+/**
+ * Get a single property by ID (protected - landlord only)
+ */
 export const getPropertyById = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const landlordId = req.user?.userId;
 
-    const property = await Property.findOne({ _id: id, landlordId });
-
-    if (!property) {
-      return res.status(404).json({
-        status: 'error',
-        message: 'Property not found'
-      });
-    }
+    const property = await propertyService.getPropertyById(id, landlordId!);
 
     res.status(200).json({
       status: 'success',
       data: property
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Get property error:', error);
-    res.status(500).json({
+    const statusCode = error.message.includes('not found') ? 404 : 500;
+    res.status(statusCode).json({
       status: 'error',
-      message: 'Failed to fetch property'
+      message: error.message || 'Failed to fetch property'
     });
   }
 };
 
-// Get single property by ID (public - for students/visitors to view)
+/**
+ * Get single property by ID (public - for students/visitors to view)
+ */
 export const getPublicPropertyById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
-    const property = await Property.findOne({
-      _id: id,
-      status: 'active'
-    }).populate('landlordId', 'name email phone');
-
-    if (!property) {
-      return res.status(404).json({
-        status: 'error',
-        message: 'Property not found or not available'
-      });
-    }
+    const property = await propertyService.getPublicPropertyById(id);
 
     res.status(200).json({
       status: 'success',
       data: property
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Get public property error:', error);
-    res.status(500).json({
+    const statusCode = error.message.includes('not found') ? 404 : 500;
+    res.status(statusCode).json({
       status: 'error',
-      message: 'Failed to fetch property details'
+      message: error.message || 'Failed to fetch property details'
     });
   }
 };
 
-// Update a property
+/**
+ * Update a property
+ */
 export const updateProperty = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const landlordId = req.user?.userId;
 
-    const property = await Property.findOneAndUpdate(
-      { _id: id, landlordId },
-      req.body,
-      { new: true, runValidators: true }
-    );
-
-    if (!property) {
-      return res.status(404).json({
-        status: 'error',
-        message: 'Property not found'
-      });
-    }
+    const property = await propertyService.updateProperty(id, landlordId!, req.body);
 
     res.status(200).json({
       status: 'success',
@@ -166,73 +131,53 @@ export const updateProperty = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    res.status(500).json({
+    const statusCode = error.message.includes('not found') ? 404 : 500;
+    res.status(statusCode).json({
       status: 'error',
-      message: 'Failed to update property'
+      message: error.message || 'Failed to update property'
     });
   }
 };
 
-// Delete a property
+/**
+ * Delete a property
+ */
 export const deleteProperty = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const landlordId = req.user?.userId;
 
-    // First find the property to get image URLs before deleting
-    const property = await Property.findOne({ _id: id, landlordId });
-
-    if (!property) {
-      return res.status(404).json({
-        status: 'error',
-        message: 'Property not found or you do not have permission to delete it'
-      });
-    }
-
-    // Delete the property from database
-    await Property.findOneAndDelete({ _id: id, landlordId });
-
-    // TODO: Optionally delete images from Cloudinary
-    // This can be implemented later if needed
-    // if (property.images && property.images.length > 0) {
-    //   const cloudinary = require('../config/cloudinary').default;
-    //   for (const imageUrl of property.images) {
-    //     const publicId = extractPublicIdFromUrl(imageUrl);
-    //     await cloudinary.uploader.destroy(publicId);
-    //   }
-    // }
+    await propertyService.deleteProperty(id, landlordId!);
 
     res.status(200).json({
       status: 'success',
       message: 'Property deleted successfully'
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Delete property error:', error);
-    res.status(500).json({
+    const statusCode = error.message.includes('not found') || error.message.includes('permission') ? 404 : 500;
+    res.status(statusCode).json({
       status: 'error',
-      message: 'Failed to delete property'
+      message: error.message || 'Failed to delete property'
     });
   }
 };
 
-// Get all properties (for students to browse)
+/**
+ * Get all properties (for students to browse)
+ */
 export const getAllProperties = async (req: Request, res: Response) => {
   try {
     const { city, type, minRent, maxRent } = req.query;
 
-    const filter: any = { status: 'active' };
+    const filters = {
+      city: city as string,
+      type: type as string,
+      minRent: minRent ? Number(minRent) : undefined,
+      maxRent: maxRent ? Number(maxRent) : undefined
+    };
 
-    if (city) filter.city = city;
-    if (type) filter.type = type;
-    if (minRent || maxRent) {
-      filter.monthlyRentMin = {};
-      if (minRent) filter.monthlyRentMin.$gte = Number(minRent);
-      if (maxRent) filter.monthlyRentMax = { $lte: Number(maxRent) };
-    }
-
-    const properties = await Property.find(filter)
-      .populate('landlordId', 'name email phone')
-      .sort({ createdAt: -1 });
+    const properties = await propertyService.getAllProperties(filters);
 
     res.status(200).json({
       status: 'success',
