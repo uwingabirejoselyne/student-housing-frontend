@@ -71,15 +71,19 @@ const Bookings = () => {
     setIsDetailModalOpen(true);
   };
 
-  // Filter bookings by status
+  // Filter bookings by status - exclude cancelled bookings unless specifically filtered
   const filteredBookings = bookings.filter((booking) => {
-    if (filterStatus === 'all') return true;
+    if (filterStatus === 'all') {
+      // Exclude cancelled bookings from 'all' view
+      return booking.status !== 'cancelled';
+    }
     return booking.status === filterStatus;
   });
 
-  // Calculate stats
+  // Calculate stats - exclude cancelled from total count
+  const activeBookings = bookings.filter((b) => b.status !== 'cancelled');
   const stats = {
-    total: bookings.length,
+    total: activeBookings.length,
     confirmed: bookings.filter((b) => b.status === 'confirmed').length,
     pending: bookings.filter((b) => b.status === 'pending').length,
     cancelled: bookings.filter((b) => b.status === 'cancelled').length,
@@ -168,7 +172,7 @@ const Bookings = () => {
         {/* Content */}
         <main className="flex-1 px-4 sm:px-6 lg:px-8 py-8 overflow-y-auto">
           {/* Stats Overview */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
             <Card padding="md" className="border-l-4 border-blue-500">
               <div className="flex items-center justify-between mb-2">
                 <Calendar className="w-6 h-6 text-blue-600" />
@@ -191,14 +195,6 @@ const Bookings = () => {
               </div>
               <p className="text-sm text-slate-600 mb-1">Pending</p>
               <p className="text-2xl font-bold text-slate-900">{stats.pending}</p>
-            </Card>
-
-            <Card padding="md" className="border-l-4 border-red-500">
-              <div className="flex items-center justify-between mb-2">
-                <XCircle className="w-6 h-6 text-red-600" />
-              </div>
-              <p className="text-sm text-slate-600 mb-1">Cancelled</p>
-              <p className="text-2xl font-bold text-slate-900">{stats.cancelled}</p>
             </Card>
           </div>
 
@@ -237,16 +233,6 @@ const Bookings = () => {
                 >
                   Pending
                 </button>
-                <button
-                  onClick={() => setFilterStatus('cancelled')}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    filterStatus === 'cancelled'
-                      ? 'bg-red-600 text-white'
-                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                  }`}
-                >
-                  Cancelled
-                </button>
               </div>
             </div>
           </Card>
@@ -273,109 +259,147 @@ const Bookings = () => {
               </Button>
             </Card>
           ) : (
-            <div className="space-y-4">
-              {filteredBookings.map((booking) => {
-                const StatusIcon = getStatusIcon(booking.status);
-                const duration = calculateDuration(booking.checkInDate, booking.checkOutDate);
+            <Card padding="none" className="overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-slate-50 border-b border-slate-200">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                        Property
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                        Dates
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                        Duration
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                        Guests
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                        Amount
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-slate-200">
+                    {filteredBookings.map((booking) => {
+                      const StatusIcon = getStatusIcon(booking.status);
+                      const duration = calculateDuration(booking.checkInDate, booking.checkOutDate);
 
-                return (
-                  <Card key={booking._id || booking.id} padding="md" hover>
-                    <div className="flex flex-col lg:flex-row gap-4">
-                      {/* Property Info */}
-                      <div className="flex-1">
-                        <div className="flex items-start justify-between mb-3">
-                          <div>
-                            <h3 className="text-lg font-bold text-slate-900 mb-1">
-                              {booking.propertyName}
-                            </h3>
-                            <div className="flex items-center gap-2 text-sm text-slate-600">
-                              <MapPin className="w-4 h-4" />
-                              <span>
-                                {booking.propertyAddress}, {booking.propertyCity}
+                      return (
+                        <tr key={booking._id || booking.id} className="hover:bg-slate-50 transition-colors">
+                          {/* Property */}
+                          <td className="px-4 py-4">
+                            <div className="flex items-start gap-2">
+                              <Building2 className="w-5 h-5 text-slate-400 mt-0.5 flex-shrink-0" />
+                              <div className="min-w-0">
+                                <p className="font-semibold text-slate-900 truncate">
+                                  {booking.propertyName}
+                                </p>
+                                <p className="text-sm text-slate-500 flex items-center gap-1">
+                                  <MapPin className="w-3 h-3" />
+                                  {booking.propertyCity}
+                                </p>
+                              </div>
+                            </div>
+                          </td>
+
+                          {/* Dates */}
+                          <td className="px-4 py-4">
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2 text-sm">
+                                <Calendar className="w-4 h-4 text-green-600" />
+                                <span className="font-medium text-slate-900">
+                                  {formatDate(booking.checkInDate)}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2 text-sm">
+                                <Calendar className="w-4 h-4 text-red-600" />
+                                <span className="font-medium text-slate-900">
+                                  {formatDate(booking.checkOutDate)}
+                                </span>
+                              </div>
+                            </div>
+                          </td>
+
+                          {/* Duration */}
+                          <td className="px-4 py-4">
+                            <div className="flex items-center gap-2">
+                              <Clock className="w-4 h-4 text-blue-600" />
+                              <span className="text-sm font-semibold text-slate-900">
+                                {duration} days
                               </span>
                             </div>
-                          </div>
-                          <Badge variant={getStatusColor(booking.status)} className="capitalize">
-                            <StatusIcon className="w-4 h-4 mr-1" />
-                            {booking.status}
-                          </Badge>
-                        </div>
+                          </td>
 
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-3">
-                          <div>
-                            <p className="text-xs text-slate-500 mb-1">Check-in</p>
-                            <p className="text-sm font-semibold text-slate-900">
-                              {formatDate(booking.checkInDate)}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-slate-500 mb-1">Check-out</p>
-                            <p className="text-sm font-semibold text-slate-900">
-                              {formatDate(booking.checkOutDate)}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-slate-500 mb-1">Duration</p>
-                            <p className="text-sm font-semibold text-slate-900">{duration} days</p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-slate-500 mb-1">Guests</p>
-                            <p className="text-sm font-semibold text-slate-900 flex items-center gap-1">
-                              <Users className="w-4 h-4" />
-                              {booking.numberOfGuests}
-                            </p>
-                          </div>
-                        </div>
+                          {/* Guests */}
+                          <td className="px-4 py-4">
+                            <div className="flex items-center gap-2">
+                              <Users className="w-4 h-4 text-slate-400" />
+                              <span className="text-sm font-medium text-slate-900">
+                                {booking.numberOfGuests}
+                              </span>
+                            </div>
+                          </td>
 
-                        <div className="flex items-center gap-4 mb-3">
-                          <div className="flex items-center gap-2">
-                            <DollarSign className="w-4 h-4 text-green-600" />
-                            <span className="text-lg font-bold text-green-600">
-                              RWF {booking.totalAmount?.toLocaleString() || 'N/A'}
-                            </span>
-                          </div>
-                          <Badge variant={booking.paymentStatus === 'paid' ? 'success' : 'warning'}>
-                            Payment: {booking.paymentStatus || 'Unpaid'}
-                          </Badge>
-                        </div>
+                          {/* Amount */}
+                          <td className="px-4 py-4">
+                            <div>
+                              <div className="flex items-center gap-1 text-green-600 font-bold">
+                                <DollarSign className="w-4 h-4" />
+                                <span>{booking.totalAmount?.toLocaleString() || 'N/A'}</span>
+                              </div>
+                              <Badge
+                                variant={booking.paymentStatus === 'paid' ? 'success' : 'warning'}
+                                className="text-xs mt-1"
+                              >
+                                {booking.paymentStatus || 'Unpaid'}
+                              </Badge>
+                            </div>
+                          </td>
 
-                        {booking.specialRequests && (
-                          <div className="text-sm text-slate-600 bg-slate-50 p-2 rounded">
-                            <span className="font-medium">Special Requests: </span>
-                            {booking.specialRequests}
-                          </div>
-                        )}
-                      </div>
+                          {/* Status */}
+                          <td className="px-4 py-4">
+                            <Badge variant={getStatusColor(booking.status)} className="capitalize">
+                              <StatusIcon className="w-4 h-4 mr-1" />
+                              {booking.status}
+                            </Badge>
+                          </td>
 
-                      {/* Actions */}
-                      <div className="flex lg:flex-col gap-2 lg:w-32">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          icon={Eye}
-                          fullWidth
-                          onClick={() => handleViewDetails(booking)}
-                        >
-                          Details
-                        </Button>
-                        {booking.status === 'pending' && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            icon={XCircle}
-                            fullWidth
-                            className="text-red-600 hover:text-red-700"
-                            onClick={() => handleCancelBooking(booking._id || booking.id!)}
-                          >
-                            Cancel
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  </Card>
-                );
-              })}
-            </div>
+                          {/* Actions */}
+                          <td className="px-4 py-4">
+                            <div className="flex items-center justify-end gap-2">
+                              <button
+                                onClick={() => handleViewDetails(booking)}
+                                className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                title="View Details"
+                              >
+                                <Eye className="w-4 h-4" />
+                              </button>
+                              {booking.status === 'pending' && (
+                                <button
+                                  onClick={() => handleCancelBooking(booking._id || booking.id!)}
+                                  className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                  title="Cancel Booking"
+                                >
+                                  <XCircle className="w-4 h-4" />
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
           )}
         </main>
       </div>
