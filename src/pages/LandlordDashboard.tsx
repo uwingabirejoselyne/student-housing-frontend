@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from 'react';
-import { Building2, Users, DollarSign, Wrench, Bell, Menu, Plus, TrendingUp, Home } from 'lucide-react';
+import { Building2, Users, DollarSign, Wrench, Bell, Menu, Plus, TrendingUp, Home, Calendar, CheckCircle, XCircle, Eye } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import Sidebar from '../components/layout/LandlordSidebar';
 import { Card } from '../components/ui/Card';
@@ -11,19 +11,40 @@ import type { PropertyFormData } from '../components/modals/AddPropertyModal';
 import AddAnnouncementModal from '../components/modals/AddAnnouncementModal';
 import { propertyService } from '../services/propertyService';
 import type { Property } from '../types/property.types';
+import { bookingService } from '../services/bookingService';
+import { useNavigate } from 'react-router-dom';
+
+interface Booking {
+  _id: string;
+  studentId: { _id: string; name: string; email: string; phone: string };
+  propertyId: { _id: string; name: string; address: string; city: string };
+  checkInDate: string;
+  checkOutDate: string;
+  numberOfGuests: number;
+  totalAmount: number;
+  status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
+  paymentStatus: 'unpaid' | 'partial' | 'paid';
+  specialRequests?: string;
+  createdAt: string;
+}
 
 const LandlordDashboard = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isAddPropertyModalOpen, setIsAddPropertyModalOpen] = useState(false);
   const [isAddAnnouncementModalOpen, setIsAddAnnouncementModalOpen] = useState(false);
   const [properties, setProperties] = useState<Property[]>([]);
+  const [bookings, setBookings] = useState<Booking[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [rejectingId, setRejectingId] = useState<string | null>(null);
   const newNotifications = 8;
 
-  // Fetch properties on mount
+  // Fetch properties and bookings on mount
   useEffect(() => {
     fetchProperties();
+    fetchBookings();
   }, []);
 
   const fetchProperties = async () => {
@@ -36,6 +57,61 @@ const LandlordDashboard = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const fetchBookings = async () => {
+    try {
+      const data = await bookingService.getLandlordBookings();
+      setBookings(data);
+    } catch (error) {
+      console.error('Failed to fetch bookings:', error);
+    }
+  };
+
+  const handleConfirmBooking = async (bookingId: string) => {
+    if (!window.confirm('Are you sure you want to confirm this booking?')) {
+      return;
+    }
+
+    setConfirmingId(bookingId);
+    try {
+      await bookingService.confirmBooking(bookingId);
+      alert('✓ Booking confirmed successfully!');
+      await fetchBookings();
+    } catch (error: any) {
+      console.error('Failed to confirm booking:', error);
+      const errorMessage = error.response?.data?.message || 'Failed to confirm booking';
+      alert(`✗ Error: ${errorMessage}`);
+    } finally {
+      setConfirmingId(null);
+    }
+  };
+
+  const handleRejectBooking = async (bookingId: string) => {
+    if (!window.confirm('Are you sure you want to reject this booking? This action cannot be undone.')) {
+      return;
+    }
+
+    setRejectingId(bookingId);
+    try {
+      await bookingService.rejectBooking(bookingId);
+      alert('✓ Booking rejected successfully');
+      await fetchBookings();
+    } catch (error: any) {
+      console.error('Failed to reject booking:', error);
+      const errorMessage = error.response?.data?.message || 'Failed to reject booking';
+      alert(`✗ Error: ${errorMessage}`);
+    } finally {
+      setRejectingId(null);
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
   };
 
   const displayName = user?.name || 'Landlord';
@@ -282,17 +358,115 @@ const LandlordDashboard = () => {
             </Card>
           </div>
 
-          {/* Placeholder for future sections */}
-          <div className="text-center py-12">
-            <p className="text-slate-500 text-lg mb-4">More features coming in next steps...</p>
-            <div className="flex flex-wrap gap-3 justify-center">
-              <Badge variant="info">Properties List</Badge>
-              <Badge variant="info">Tenants Management</Badge>
-              <Badge variant="info">Payment Tracking</Badge>
-              <Badge variant="info">Maintenance Queue</Badge>
-              <Badge variant="info">Analytics</Badge>
+          {/* Pending Bookings Section */}
+          <Card padding="lg" className="mb-8">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <Calendar className="w-6 h-6 text-blue-600" />
+                <h2 className="text-xl font-bold text-slate-900">Pending Bookings</h2>
+                <Badge variant="warning">
+                  {bookings.filter(b => b.status === 'pending').length}
+                </Badge>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate('/landlord/bookings')}
+              >
+                View All
+              </Button>
             </div>
-          </div>
+
+            {isLoading ? (
+              <div className="text-center py-8">
+                <p className="text-slate-600">Loading bookings...</p>
+              </div>
+            ) : bookings.filter(b => b.status === 'pending').length === 0 ? (
+              <div className="text-center py-8">
+                <Calendar className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                <p className="text-slate-600">No pending bookings at this time</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {bookings
+                  .filter(b => b.status === 'pending')
+                  .slice(0, 5)
+                  .map((booking) => (
+                    <Card key={booking._id} padding="md" className="border-l-4 border-yellow-500">
+                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        {/* Booking Info */}
+                        <div className="flex-1">
+                          <div className="flex items-start gap-3">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-2">
+                                <h3 className="font-semibold text-slate-900">
+                                  {booking.propertyId.name}
+                                </h3>
+                                <Badge variant="warning" className="text-xs">Pending</Badge>
+                              </div>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-slate-600">
+                                <div>
+                                  <span className="font-medium">Student:</span> {booking.studentId.name}
+                                </div>
+                                <div>
+                                  <span className="font-medium">Contact:</span> {booking.studentId.phone}
+                                </div>
+                                <div>
+                                  <span className="font-medium">Check-in:</span> {formatDate(booking.checkInDate)}
+                                </div>
+                                <div>
+                                  <span className="font-medium">Check-out:</span> {formatDate(booking.checkOutDate)}
+                                </div>
+                                <div>
+                                  <span className="font-medium">Guests:</span> {booking.numberOfGuests}
+                                </div>
+                                <div>
+                                  <span className="font-medium">Amount:</span>{' '}
+                                  <span className="font-semibold text-slate-900">
+                                    {booking.totalAmount.toLocaleString()} RWF
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="flex items-center gap-2 md:flex-col lg:flex-row">
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            icon={CheckCircle}
+                            onClick={() => handleConfirmBooking(booking._id)}
+                            disabled={confirmingId === booking._id}
+                            className="bg-green-600 hover:bg-green-700"
+                          >
+                            {confirmingId === booking._id ? 'Confirming...' : 'Accept'}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            icon={XCircle}
+                            onClick={() => handleRejectBooking(booking._id)}
+                            disabled={rejectingId === booking._id}
+                            className="text-red-600 border-red-600 hover:bg-red-50"
+                          >
+                            {rejectingId === booking._id ? 'Rejecting...' : 'Reject'}
+                          </Button>
+                          <button
+                            onClick={() => navigate('/landlord/bookings')}
+                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                            title="View Details"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+              </div>
+            )}
+          </Card>
         </main>
       </div>
 

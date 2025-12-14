@@ -1,5 +1,5 @@
 import React from 'react';
-import { Building2, Users, DollarSign, Wrench, Bell, BarChart3, Settings, LogOut, X, Home } from 'lucide-react';
+import { Building2, Users, DollarSign, Wrench, Bell, BarChart3, Settings, LogOut, X, Home, Calendar } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
@@ -16,6 +16,7 @@ const LandlordSidebar: React.FC<LandlordSidebarProps> = ({ isOpen, toggleSidebar
   const navItems = [
     { icon: Home, label: 'Dashboard', path: '/landlordDashboard' },
     { icon: Building2, label: 'Properties', path: '/landlord/properties' },
+    { icon: Calendar, label: 'Bookings', path: '/landlord/bookings' },
     { icon: Users, label: 'Tenants', path: '/landlord/tenants' },
     { icon: DollarSign, label: 'Payments', path: '/landlord/payments' },
     { icon: Wrench, label: 'Maintenance', path: '/landlord/maintenance' },

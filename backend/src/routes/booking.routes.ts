@@ -17,6 +17,11 @@ const router = express.Router();
 // All booking routes require authentication
 router.use(authenticate);
 
+// Landlord routes (must come before /:id routes to avoid route conflicts)
+router.get('/landlord/bookings', getLandlordBookings); // Get all bookings for landlord's properties
+router.patch('/:id/confirm', confirmBooking); // Confirm booking (landlord only)
+router.patch('/:id/reject', rejectBooking); // Reject booking (landlord only)
+
 // Student routes
 router.post('/', createBooking); // Create new booking
 router.get('/my-bookings', getMyBookings); // Get all bookings for logged-in student
@@ -24,10 +29,5 @@ router.get('/:id', getBookingById); // Get single booking by ID
 router.put('/:id', updateBooking); // Update booking (only pending bookings)
 router.patch('/:id/cancel', cancelBooking); // Cancel booking (student)
 router.delete('/:id', deleteBooking); // Delete booking
-
-// Landlord routes
-router.get('/landlord/bookings', getLandlordBookings); // Get all bookings for landlord's properties
-router.patch('/:id/confirm', confirmBooking); // Confirm booking (landlord only)
-router.patch('/:id/reject', rejectBooking); // Reject booking (landlord only)
 
 export default router;

@@ -36,4 +36,22 @@ export const bookingService = {
   deleteBooking: async (id: string): Promise<void> => {
     await api.delete(`/bookings/${id}`);
   },
+
+  // Get all bookings for landlord's properties
+  getLandlordBookings: async (): Promise<Booking[]> => {
+    const { data } = await api.get('/bookings/landlord/bookings');
+    return data.data || data;
+  },
+
+  // Confirm a booking (landlord only)
+  confirmBooking: async (id: string): Promise<Booking> => {
+    const { data } = await api.patch(`/bookings/${id}/confirm`);
+    return data.data || data;
+  },
+
+  // Reject a booking (landlord only)
+  rejectBooking: async (id: string): Promise<Booking> => {
+    const { data } = await api.patch(`/bookings/${id}/reject`);
+    return data.data || data;
+  },
 };
