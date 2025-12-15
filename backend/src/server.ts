@@ -6,6 +6,7 @@ import authRoutes from './routes/auth.routes';
 import propertyRoutes from './routes/property.routes';
 import uploadRoutes from './routes/upload.routes';
 import bookingRoutes from './routes/booking.routes';
+import notificationRoutes from './routes/notification.routes';
 
 dotenv.config();
 
@@ -25,6 +26,7 @@ app.use('/api/users', authRoutes);
 app.use('/api/properties', propertyRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/bookings', bookingRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Basic health check route
 app.get('/api/health', (req: Request, res: Response) => {

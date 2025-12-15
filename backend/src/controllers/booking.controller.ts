@@ -2,6 +2,7 @@
 import {  Response } from 'express';
 import { AuthRequest } from '../middlewares/auth.middleware';
 import bookingService from '../services/booking.service';
+import { createNotification } from './notification.controller';
 
 /**
  * Create a new booking
@@ -18,6 +19,26 @@ export const createBooking = async (req: AuthRequest, res: Response) => {
       studentId: userId!,
       ...req.body
     });
+
+    // Send notification to the landlord about the new booking request
+    if (booking) {
+      try {
+        const propertyName = typeof booking.propertyId === 'object' && (booking.propertyId as any).name
+          ? (booking.propertyId as any).name
+          : 'your property';
+        await createNotification({
+          userId: booking.landlordId.toString(),
+          type: 'booking_created',
+          title: 'New Booking Request',
+          message: `You have a new booking request for ${propertyName}.`,
+          relatedId: booking._id.toString(),
+          relatedModel: 'Booking'
+        });
+      } catch (notifError) {
+        console.error('Failed to create notification:', notifError);
+        // Don't fail the whole request if notification fails
+      }
+    }
 
     res.status(201).json({
       status: 'success',
@@ -122,6 +143,26 @@ export const confirmBooking = async (req: AuthRequest, res: Response) => {
 
     const booking = await bookingService.confirmBooking(id, landlordId!);
 
+    // Send notification to the student that their booking was confirmed
+    if (booking) {
+      try {
+        const propertyName = typeof booking.propertyId === 'object' && (booking.propertyId as any).name
+          ? (booking.propertyId as any).name
+          : 'property';
+        await createNotification({
+          userId: booking.studentId.toString(),
+          type: 'booking_confirmed',
+          title: 'Booking Confirmed!',
+          message: `Your booking for ${propertyName} has been confirmed by the landlord.`,
+          relatedId: booking._id.toString(),
+          relatedModel: 'Booking'
+        });
+      } catch (notifError) {
+        console.error('Failed to create notification:', notifError);
+        // Don't fail the whole request if notification fails
+      }
+    }
+
     res.status(200).json({
       status: 'success',
       message: 'Booking confirmed successfully',
@@ -147,6 +188,26 @@ export const rejectBooking = async (req: AuthRequest, res: Response) => {
     const landlordId = req.user?.userId;
 
     const booking = await bookingService.rejectBooking(id, landlordId!);
+
+    // Send notification to the student that their booking was rejected
+    if (booking && booking.studentId) {
+      try {
+        const propertyName = typeof booking.propertyId === 'object' && (booking.propertyId as any).name
+          ? (booking.propertyId as any).name
+          : 'property';
+        await createNotification({
+          userId: booking.studentId.toString(),
+          type: 'booking_rejected',
+          title: 'Booking Rejected',
+          message: `Your booking request for ${propertyName} has been declined.`,
+          relatedId: booking._id.toString(),
+          relatedModel: 'Booking'
+        });
+      } catch (notifError) {
+        console.error('Failed to create notification:', notifError);
+        // Don't fail the whole request if notification fails
+      }
+    }
 
     res.status(200).json({
       status: 'success',

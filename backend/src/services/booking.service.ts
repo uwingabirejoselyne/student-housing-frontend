@@ -144,7 +144,9 @@ export class BookingService {
     booking.status = 'cancelled';
     await booking.save();
 
-    return booking;
+    return await Booking.findById(booking._id)
+      .populate('studentId', 'name email phone')
+      .populate('propertyId', 'name address city');
   }
 
   /**
