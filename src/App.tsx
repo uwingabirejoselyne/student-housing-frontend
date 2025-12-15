@@ -7,6 +7,7 @@ import BrowseListings from './pages/BrowseListings';
 import SearchListings from './pages/SearchListings';
 import ListingDetails from './pages/ListingDetails';
 import StudentDashboard from './pages/StudentDashboard';
+import StudentPayments from './pages/StudentPayments';
 import LandlordDashboard from './pages/LandlordDashboard';
 import LandlordProperties from './pages/LandlordProperties';
 import LandlordTenants from './pages/LandlordTenants';
@@ -61,6 +62,7 @@ function App() {
         <Route path="/studentDashboard" element={<StudentDashboard />} />
         <Route path="/student/saved" element={<SavedProperties />} />
         <Route path="/student/bookings" element={<Bookings />} />
+        <Route path="/student/payments" element={<StudentPayments />} />
         <Route path="/student/profile" element={<Profile />} />
         <Route path="/student/settings" element={<Settings />} />
 

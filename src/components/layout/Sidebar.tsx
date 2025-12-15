@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Home, Heart, Calendar, User, Settings, LogOut, X } from 'lucide-react';
+import { Home, Heart, Calendar, User, Settings, LogOut, X, DollarSign } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
@@ -15,9 +15,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
   const navigate = useNavigate();
 
   const navItems = [
-    { icon: Home, label: 'Dashboard', path: '/student' },
+    { icon: Home, label: 'Dashboard', path: '/studentDashboard' },
     { icon: Heart, label: 'Saved Properties', path: '/student/saved' },
     { icon: Calendar, label: 'Bookings', path: '/student/bookings' },
+    { icon: DollarSign, label: 'Payments', path: '/student/payments' },
     { icon: User, label: 'Profile', path: '/student/profile' },
     { icon: Settings, label: 'Settings', path: '/student/settings' },
   ];
