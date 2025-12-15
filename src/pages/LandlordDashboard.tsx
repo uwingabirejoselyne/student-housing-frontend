@@ -1,8 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from 'react';
-import { Building2, Users, DollarSign, Wrench, Bell, Menu, Plus, TrendingUp, Home, Calendar, CheckCircle, XCircle, Eye } from 'lucide-react';
+import { Building2, Users, DollarSign, Wrench, Menu, Plus, TrendingUp, Home, Calendar, CheckCircle, XCircle, Eye } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import Sidebar from '../components/layout/LandlordSidebar';
+import NotificationDropdown from '../components/layout/NotificationDropdown';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
@@ -39,7 +40,6 @@ const LandlordDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [rejectingId, setRejectingId] = useState<string | null>(null);
-  const newNotifications = 8;
 
   // Fetch properties and bookings on mount
   useEffect(() => {
@@ -195,17 +195,8 @@ const LandlordDashboard = () => {
               </div>
 
               <div className="flex items-center gap-3">
-                <button
-                  className="relative p-2 rounded-lg hover:bg-slate-100 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  aria-label={`${newNotifications} new notifications`}
-                >
-                  <Bell className="w-6 h-6 text-slate-700" aria-hidden="true" />
-                  {newNotifications > 0 && (
-                    <span className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-medium">
-                      {newNotifications}
-                    </span>
-                  )}
-                </button>
+                {/* Notification Dropdown */}
+                <NotificationDropdown />
 
                 <div className="flex items-center gap-3">
                   <div className="text-right hidden sm:block">
