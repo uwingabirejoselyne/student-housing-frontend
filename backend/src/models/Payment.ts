@@ -51,7 +51,6 @@ const PaymentSchema = new Schema<IPayment>(
     transactionId: {
       type: String,
       trim: true,
-      unique: true,
       sparse: true                          // Allows multiple null values
     },
     paymentDate: {

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { api } from './api';
 
 /**
@@ -54,7 +55,7 @@ export const paymentService = {
     amount: number;
     phoneNumber: string;
   }): Promise<{ paymentLink: string; txRef: string }> => {
-    const response = await api.post('/api/payments/initiate-momo', data);
+    const response = await api.post('/payments/initiate-momo', data);
     return response.data.data;
   },
 
@@ -62,7 +63,7 @@ export const paymentService = {
    * Verify payment transaction
    */
   verifyPayment: async (transactionId: string): Promise<any> => {
-    const response = await api.get(`/api/payments/verify/${transactionId}`);
+    const response = await api.get(`/payments/verify/${transactionId}`);
     return response.data.data;
   },
 
@@ -70,7 +71,7 @@ export const paymentService = {
    * Create a new payment (for cash/bank)
    */
   createPayment: async (paymentData: CreatePaymentData): Promise<{ payment: Payment; summary: PaymentSummary }> => {
-    const response = await api.post('/api/payments', paymentData);
+    const response = await api.post('/payments', paymentData);
     return {
       payment: response.data.data,
       summary: response.data.summary
@@ -81,7 +82,7 @@ export const paymentService = {
    * Get all payments for current user (student)
    */
   getMyPayments: async (): Promise<Payment[]> => {
-    const response = await api.get('/api/payments/my-payments');
+    const response = await api.get('/payments/my-payments');
     return response.data.data;
   },
 
@@ -89,7 +90,7 @@ export const paymentService = {
    * Get all payments received by landlord
    */
   getLandlordPayments: async (): Promise<Payment[]> => {
-    const response = await api.get('/api/payments/landlord-payments');
+    const response = await api.get('/payments/landlord-payments');
     return response.data.data;
   },
 
@@ -97,7 +98,7 @@ export const paymentService = {
    * Get all payments for a specific booking
    */
   getBookingPayments: async (bookingId: string): Promise<Payment[]> => {
-    const response = await api.get(`/api/payments/booking/${bookingId}`);
+    const response = await api.get(`/payments/booking/${bookingId}`);
     return response.data.data;
   },
 
@@ -105,7 +106,7 @@ export const paymentService = {
    * Get payment summary for a booking
    */
   getBookingPaymentSummary: async (bookingId: string): Promise<PaymentSummary> => {
-    const response = await api.get(`/api/payments/booking/${bookingId}/summary`);
+    const response = await api.get(`/payments/booking/${bookingId}/summary`);
     return response.data.data;
   },
 
@@ -113,7 +114,7 @@ export const paymentService = {
    * Get single payment by ID
    */
   getPaymentById: async (paymentId: string): Promise<Payment> => {
-    const response = await api.get(`/api/payments/${paymentId}`);
+    const response = await api.get(`/payments/${paymentId}`);
     return response.data.data;
   }
 };

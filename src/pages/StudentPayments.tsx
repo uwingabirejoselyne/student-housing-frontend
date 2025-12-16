@@ -113,11 +113,13 @@ const StudentPayments = () => {
             </div>
           </Card>
 
-          {/* Payments List */}
-          <Card padding="lg">
-            <div className="flex items-center gap-3 mb-6">
-              <Receipt className="w-6 h-6 text-blue-600" />
-              <h2 className="text-xl font-bold text-slate-900">Payment History</h2>
+          {/* Payments Table */}
+          <Card padding="none">
+            <div className="px-6 py-4 border-b border-slate-200">
+              <div className="flex items-center gap-3">
+                <Receipt className="w-6 h-6 text-blue-600" />
+                <h2 className="text-xl font-bold text-slate-900">Payment History</h2>
+              </div>
             </div>
 
             {isLoading ? (
@@ -131,61 +133,98 @@ const StudentPayments = () => {
                 <p className="text-slate-500 text-sm">Your payment history will appear here</p>
               </div>
             ) : (
-              <div className="space-y-4">
-                {payments.map((payment) => {
-                  const methodBadge = getPaymentMethodBadge(payment.paymentMethod);
-                  const statusBadge = getStatusBadge(payment.paymentStatus);
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-slate-50 border-b border-slate-200">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                        Date
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                        Amount
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                        Method
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                        Paid To
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                        Transaction ID
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                        Status
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-slate-200">
+                    {payments.map((payment) => {
+                      const methodBadge = getPaymentMethodBadge(payment.paymentMethod);
+                      const statusBadge = getStatusBadge(payment.paymentStatus);
 
-                  return (
-                    <Card key={payment._id} padding="md" className="border-l-4 border-blue-500">
-                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        {/* Payment Info */}
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <h3 className="font-semibold text-slate-900">
-                              Payment #{payment._id.slice(-6).toUpperCase()}
-                            </h3>
-                            <Badge variant={statusBadge.variant}>{statusBadge.text}</Badge>
-                          </div>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-slate-600">
-                            <div>
-                              <span className="font-medium">Amount:</span>{' '}
-                              <span className="font-bold text-slate-900">
+                      return (
+                        <tr key={payment._id} className="hover:bg-slate-50 transition-colors">
+                          {/* Date */}
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center gap-2">
+                              <Calendar className="w-4 h-4 text-slate-400" />
+                              <span className="text-sm font-medium text-slate-900">
+                                {formatDate(payment.paymentDate)}
+                              </span>
+                            </div>
+                          </td>
+
+                          {/* Amount */}
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center gap-1">
+                              <DollarSign className="w-4 h-4 text-green-600" />
+                              <span className="text-sm font-bold text-green-600">
                                 {payment.amount.toLocaleString()} RWF
                               </span>
                             </div>
-                            <div>
-                              <span className="font-medium">Method:</span>{' '}
-                              <Badge variant={methodBadge.variant} className="text-xs">
-                                {methodBadge.text}
-                              </Badge>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <Calendar className="w-3 h-3" />
-                              <span className="font-medium">Date:</span> {formatDate(payment.paymentDate)}
-                            </div>
-                            {payment.transactionId && (
-                              <div>
-                                <span className="font-medium">Transaction:</span> {payment.transactionId}
-                              </div>
-                            )}
-                          </div>
-                          {payment.notes && (
-                            <div className="mt-2 text-sm text-slate-600">
-                              <span className="font-medium">Notes:</span> {payment.notes}
-                            </div>
-                          )}
-                        </div>
+                          </td>
 
-                        {/* Landlord Info */}
-                        <div className="text-sm text-slate-600 md:text-right">
-                          <p className="font-medium text-slate-900">Paid to:</p>
-                          <p>{payment.landlordId.name}</p>
-                        </div>
-                      </div>
-                    </Card>
-                  );
-                })}
+                          {/* Method */}
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <Badge variant={methodBadge.variant} className="text-xs">
+                              {methodBadge.text}
+                            </Badge>
+                          </td>
+
+                          {/* Paid To */}
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-slate-900 font-medium">
+                              {payment.landlordId.name}
+                            </div>
+                            <div className="text-xs text-slate-500">
+                              {payment.landlordId.email}
+                            </div>
+                          </td>
+
+                          {/* Transaction ID */}
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {payment.transactionId ? (
+                              <div className="text-xs font-mono text-slate-600" title={payment.transactionId}>
+                                {payment.transactionId.length > 20
+                                  ? `${payment.transactionId.substring(0, 20)}...`
+                                  : payment.transactionId}
+                              </div>
+                            ) : (
+                              <span className="text-xs text-slate-400">—</span>
+                            )}
+                          </td>
+
+                          {/* Status */}
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <Badge variant={statusBadge.variant} className="text-xs">
+                              {statusBadge.text}
+                            </Badge>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
             )}
           </Card>
