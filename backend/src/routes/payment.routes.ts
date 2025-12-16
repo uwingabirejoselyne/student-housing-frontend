@@ -6,8 +6,13 @@ const router = express.Router();
 
 /**
  * Payment Routes
- * All routes require authentication
+ * All routes require authentication except webhook
  */
+
+// Mobile Money payment routes
+router.post('/initiate-momo', authenticate, paymentController.initiateMoMoPayment);
+router.get('/verify/:transactionId', authenticate, paymentController.verifyPayment);
+router.post('/webhook', paymentController.handleWebhook); // No auth - Flutterwave webhook
 
 // Create a new payment (students only)
 router.post('/', authenticate, paymentController.createPayment);

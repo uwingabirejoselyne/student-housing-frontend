@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { X, CreditCard, Banknote } from 'lucide-react';
+import { X, CreditCard, Banknote, Copy, CheckCircle2 } from 'lucide-react';
 import { Button } from '../ui/Button';
-import { paymentService, CreatePaymentData } from '../../services/paymentService';
+import { paymentService, type CreatePaymentData } from '../../services/paymentService';
 
 interface MakePaymentModalProps {
   isOpen: boolean;
@@ -22,10 +22,12 @@ const MakePaymentModal = ({
 }: MakePaymentModalProps) => {
   const [amount, setAmount] = useState<string>('');
   const [paymentMethod, setPaymentMethod] = useState<'momo' | 'cash' | 'bank'>('momo');
+  const [momoProvider, setMomoProvider] = useState<'mtn' | 'airtel'>('mtn');
   const [transactionId, setTransactionId] = useState('');
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [showInstructions, setShowInstructions] = useState(false);
 
   if (!isOpen) return null;
 
@@ -33,14 +35,16 @@ const MakePaymentModal = ({
   const handleClose = () => {
     setAmount('');
     setPaymentMethod('momo');
+    setMomoProvider('mtn');
     setTransactionId('');
     setNotes('');
     setError('');
+    setShowInstructions(false);
     onClose();
   };
 
-  // Handle form submission
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Show USSD payment instructions
+  const handleShowInstructions = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
@@ -56,10 +60,22 @@ const MakePaymentModal = ({
       return;
     }
 
+    // Show instructions for MoMo
+    if (paymentMethod === 'momo') {
+      setShowInstructions(true);
+      return;
+    }
+
+    // For cash/bank, submit directly
+    handleDirectPayment();
+  };
+
+  // Handle direct payment submission (cash/bank)
+  const handleDirectPayment = async () => {
+    const paymentAmount = Number(amount);
     setIsSubmitting(true);
 
     try {
-      // Create payment data
       const paymentData: CreatePaymentData = {
         bookingId,
         amount: paymentAmount,
@@ -68,10 +84,44 @@ const MakePaymentModal = ({
         notes: notes || undefined
       };
 
-      // Submit payment
       await paymentService.createPayment(paymentData);
 
-      // Success!
+      alert(`✓ Payment of ${paymentAmount.toLocaleString()} RWF recorded successfully!`);
+
+      if (onPaymentSuccess) {
+        onPaymentSuccess();
+      }
+
+      handleClose();
+    } catch (err: any) {
+      console.error('Payment error:', err);
+      setError(err.response?.data?.message || 'Failed to process payment');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Confirm payment after USSD
+  const handleConfirmPayment = async () => {
+    if (!transactionId || transactionId.trim() === '') {
+      setError('Please enter the transaction reference from your phone');
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const paymentAmount = Number(amount);
+      const paymentData: CreatePaymentData = {
+        bookingId,
+        amount: paymentAmount,
+        paymentMethod: 'momo',
+        transactionId: transactionId.trim(),
+        notes: `${momoProvider.toUpperCase()} Mobile Money payment`
+      };
+
+      await paymentService.createPayment(paymentData);
+
       alert(`✓ Payment of ${paymentAmount.toLocaleString()} RWF recorded successfully!`);
 
       if (onPaymentSuccess) {
@@ -129,7 +179,8 @@ const MakePaymentModal = ({
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
+          {!showInstructions ? (
+          <form onSubmit={handleShowInstructions} className="space-y-4">
             {/* Amount Input */}
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">
@@ -193,19 +244,54 @@ const MakePaymentModal = ({
               </div>
             </div>
 
-            {/* Transaction ID (optional) */}
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Transaction ID (Optional)
-              </label>
-              <input
-                type="text"
-                value={transactionId}
-                onChange={(e) => setTransactionId(e.target.value)}
-                placeholder="e.g., MoMo reference number"
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
+            {/* Mobile Money Provider (for MoMo only) */}
+            {paymentMethod === 'momo' && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Select Provider *
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setMomoProvider('mtn')}
+                    className={`p-3 rounded-lg border-2 text-sm font-medium transition-all ${
+                      momoProvider === 'mtn'
+                        ? 'border-yellow-500 bg-yellow-50 text-yellow-700'
+                        : 'border-slate-200 hover:border-slate-300'
+                    }`}
+                  >
+                    📱 MTN MoMo
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMomoProvider('airtel')}
+                    className={`p-3 rounded-lg border-2 text-sm font-medium transition-all ${
+                      momoProvider === 'airtel'
+                        ? 'border-red-500 bg-red-50 text-red-700'
+                        : 'border-slate-200 hover:border-slate-300'
+                    }`}
+                  >
+                    📱 Airtel Money
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Transaction ID (optional - for cash/bank only) */}
+            {paymentMethod !== 'momo' && (
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Transaction ID (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={transactionId}
+                  onChange={(e) => setTransactionId(e.target.value)}
+                  placeholder="e.g., Bank reference number"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+            )}
 
             {/* Notes */}
             <div>
@@ -245,10 +331,110 @@ const MakePaymentModal = ({
                 className="flex-1 bg-blue-600 hover:bg-blue-700"
                 disabled={isSubmitting}
               >
-                {isSubmitting ? 'Processing...' : 'Submit Payment'}
+                {isSubmitting
+                  ? 'Processing...'
+                  : paymentMethod === 'momo'
+                    ? 'Continue to Payment'
+                    : 'Submit Payment'}
               </Button>
             </div>
           </form>
+          ) : (
+            /* USSD Payment Instructions */
+            <div className="space-y-4">
+              <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-lg p-6">
+                <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                  <Copy className="w-5 h-5 text-yellow-600" />
+                  Payment Instructions - {momoProvider === 'mtn' ? 'MTN MoMo' : 'Airtel Money'}
+                </h3>
+
+                <div className="space-y-3 text-sm">
+                  <p className="font-semibold text-slate-900">
+                    Amount to pay: <span className="text-2xl text-green-600">{Number(amount).toLocaleString()} RWF</span>
+                  </p>
+
+                  <div className="bg-white rounded-lg p-4 border-2 border-yellow-300">
+                    <p className="font-bold text-slate-900 mb-2">📱 Follow these steps:</p>
+                    <ol className="list-decimal list-inside space-y-2 text-slate-700">
+                      {momoProvider === 'mtn' ? (
+                        <>
+                          <li>Dial <span className="font-mono font-bold text-yellow-600">*182*8*1#</span> on your MTN phone</li>
+                          <li>Select option <strong>1</strong> (My Wallet)</li>
+                          <li>Select option <strong>3</strong> (Payments)</li>
+                          <li>Enter amount: <strong>{Number(amount).toLocaleString()} RWF</strong></li>
+                          <li>Enter your PIN to confirm</li>
+                          <li>You'll receive an SMS with transaction reference</li>
+                        </>
+                      ) : (
+                        <>
+                          <li>Dial <span className="font-mono font-bold text-red-600">*500#</span> on your Airtel phone</li>
+                          <li>Select <strong>Payments</strong></li>
+                          <li>Select <strong>Other Payments</strong></li>
+                          <li>Enter amount: <strong>{Number(amount).toLocaleString()} RWF</strong></li>
+                          <li>Enter your PIN to confirm</li>
+                          <li>You'll receive an SMS with transaction reference</li>
+                        </>
+                      )}
+                    </ol>
+                  </div>
+
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <p className="text-xs text-blue-700 flex items-center gap-1">
+                      <CheckCircle2 className="w-4 h-4" />
+                      After completing payment, enter the transaction reference below
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Transaction Reference Input */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Transaction Reference * (from SMS)
+                </label>
+                <input
+                  type="text"
+                  value={transactionId}
+                  onChange={(e) => setTransactionId(e.target.value)}
+                  placeholder="e.g., MP210524.1234.A12345"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required
+                />
+                <p className="text-xs text-slate-500 mt-1">
+                  Check your phone SMS for the transaction ID
+                </p>
+              </div>
+
+              {/* Error Message */}
+              {error && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                  <p className="text-sm text-red-600">{error}</p>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 pt-4">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => setShowInstructions(false)}
+                  className="flex-1"
+                  disabled={isSubmitting}
+                >
+                  ← Back
+                </Button>
+                <Button
+                  type="button"
+                  variant="primary"
+                  onClick={handleConfirmPayment}
+                  className="flex-1 bg-green-600 hover:bg-green-700"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? 'Confirming...' : 'Confirm Payment'}
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

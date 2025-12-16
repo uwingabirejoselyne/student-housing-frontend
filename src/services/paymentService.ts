@@ -47,7 +47,27 @@ export interface CreatePaymentData {
 export const paymentService = {
 
   /**
-   * Create a new payment
+   * Initiate Mobile Money payment
+   */
+  initiateMoMoPayment: async (data: {
+    bookingId: string;
+    amount: number;
+    phoneNumber: string;
+  }): Promise<{ paymentLink: string; txRef: string }> => {
+    const response = await api.post('/api/payments/initiate-momo', data);
+    return response.data.data;
+  },
+
+  /**
+   * Verify payment transaction
+   */
+  verifyPayment: async (transactionId: string): Promise<any> => {
+    const response = await api.get(`/api/payments/verify/${transactionId}`);
+    return response.data.data;
+  },
+
+  /**
+   * Create a new payment (for cash/bank)
    */
   createPayment: async (paymentData: CreatePaymentData): Promise<{ payment: Payment; summary: PaymentSummary }> => {
     const response = await api.post('/api/payments', paymentData);

@@ -15,6 +15,7 @@ import {
   X,
   Phone,
   Mail,
+  CreditCard,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import Sidebar from '../components/layout/Sidebar';
@@ -22,7 +23,9 @@ import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { bookingService } from '../services/bookingService';
+import { paymentService } from '../services/paymentService';
 import type { Booking } from '../types/booking.types';
+import MakePaymentModal from '../components/modals/MakePaymentModal';
 
 const Bookings = () => {
   const { user } = useAuth();
@@ -32,6 +35,8 @@ const Bookings = () => {
   const [filterStatus, setFilterStatus] = useState('all');
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [paymentSummary, setPaymentSummary] = useState<any>(null);
 
   // Fetch bookings on mount
   useEffect(() => {
@@ -66,9 +71,39 @@ const Bookings = () => {
     }
   };
 
-  const handleViewDetails = (booking: Booking) => {
+  const handleViewDetails = async (booking: Booking) => {
     setSelectedBooking(booking);
     setIsDetailModalOpen(true);
+
+    // Fetch payment summary for this booking
+    if (booking._id || booking.id) {
+      try {
+        const summary = await paymentService.getBookingPaymentSummary(booking._id || booking.id!);
+        setPaymentSummary(summary);
+      } catch (error) {
+        console.error('Failed to fetch payment summary:', error);
+      }
+    }
+  };
+
+  const handleMakePayment = () => {
+    setIsDetailModalOpen(false);
+    setIsPaymentModalOpen(true);
+  };
+
+  const handlePaymentSuccess = async () => {
+    // Refresh bookings and payment summary
+    await fetchBookings();
+    if (selectedBooking?._id || selectedBooking?.id) {
+      try {
+        const summary = await paymentService.getBookingPaymentSummary(
+          selectedBooking._id || selectedBooking.id!
+        );
+        setPaymentSummary(summary);
+      } catch (error) {
+        console.error('Failed to refresh payment summary:', error);
+      }
+    }
   };
 
   // Filter bookings by status - exclude cancelled bookings unless specifically filtered
@@ -382,6 +417,18 @@ const Bookings = () => {
                               >
                                 <Eye className="w-4 h-4" />
                               </button>
+                              {booking.paymentStatus !== 'paid' && booking.status === 'confirmed' && (
+                                <button
+                                  onClick={() => {
+                                    setSelectedBooking(booking);
+                                    setIsPaymentModalOpen(true);
+                                  }}
+                                  className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                                  title="Make Payment"
+                                >
+                                  <CreditCard className="w-4 h-4" />
+                                </button>
+                              )}
                               {booking.status === 'pending' && (
                                 <button
                                   onClick={() => handleCancelBooking(booking._id || booking.id!)}
@@ -403,6 +450,18 @@ const Bookings = () => {
           )}
         </main>
       </div>
+
+      {/* Make Payment Modal */}
+      {isPaymentModalOpen && selectedBooking && (
+        <MakePaymentModal
+          isOpen={isPaymentModalOpen}
+          onClose={() => setIsPaymentModalOpen(false)}
+          bookingId={selectedBooking._id || selectedBooking.id!}
+          totalAmount={selectedBooking.totalAmount || 0}
+          remainingBalance={paymentSummary?.remainingBalance || selectedBooking.totalAmount || 0}
+          onPaymentSuccess={handlePaymentSuccess}
+        />
+      )}
 
       {/* Booking Details Modal */}
       {isDetailModalOpen && selectedBooking && (
@@ -486,7 +545,7 @@ const Bookings = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <p className="text-sm text-slate-500 mb-1">Total Amount</p>
-                    <p className="text-xl font-bold text-green-600">
+                    <p className="text-xl font-bold text-slate-900">
                       RWF {selectedBooking.totalAmount?.toLocaleString() || 'N/A'}
                     </p>
                   </div>
@@ -499,7 +558,35 @@ const Bookings = () => {
                       {selectedBooking.paymentStatus || 'Unpaid'}
                     </Badge>
                   </div>
+                  {paymentSummary && (
+                    <>
+                      <div>
+                        <p className="text-sm text-slate-500 mb-1">Total Paid</p>
+                        <p className="text-lg font-semibold text-green-600">
+                          RWF {paymentSummary.totalPaid?.toLocaleString() || '0'}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-slate-500 mb-1">Remaining Balance</p>
+                        <p className="text-lg font-semibold text-orange-600">
+                          RWF {paymentSummary.remainingBalance?.toLocaleString() || '0'}
+                        </p>
+                      </div>
+                    </>
+                  )}
                 </div>
+                {selectedBooking.paymentStatus !== 'paid' && selectedBooking.status === 'confirmed' && (
+                  <div className="mt-4">
+                    <Button
+                      icon={CreditCard}
+                      variant="primary"
+                      className="bg-green-600 hover:bg-green-700 w-full"
+                      onClick={handleMakePayment}
+                    >
+                      Make Payment
+                    </Button>
+                  </div>
+                )}
               </div>
 
               {/* Landlord Contact */}
