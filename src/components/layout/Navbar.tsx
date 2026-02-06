@@ -3,6 +3,7 @@ import { Home, Menu, X, User } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { Button } from '../ui/Button';
+import ProfileSummaryModal from '../modals/ProfileSummaryModal';
 
 interface NavbarProps {
   onLoginClick: () => void;
@@ -11,6 +12,7 @@ interface NavbarProps {
 
 const Navbar: React.FC<NavbarProps> = ({ onLoginClick, onSignUpClick }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const { user, isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -67,8 +69,8 @@ const Navbar: React.FC<NavbarProps> = ({ onLoginClick, onSignUpClick }) => {
                   variant="ghost"
                   size="sm"
                   icon={User}
-                  onClick={() => navigate('/student')}
-                  aria-label="Go to dashboard"
+                  onClick={() => setIsProfileModalOpen(true)}
+                  aria-label="Open profile summary"
                 >
                   {user.name}
                 </Button>
@@ -146,7 +148,7 @@ const Navbar: React.FC<NavbarProps> = ({ onLoginClick, onSignUpClick }) => {
               <div className="pt-3 border-t border-slate-200 mt-3 space-y-2">
                 <button
                   onClick={() => {
-                    navigate('/student');
+                    setIsProfileModalOpen(true);
                     setIsMobileMenuOpen(false);
                   }}
                   className="block w-full text-left py-2.5 px-3 text-slate-700 font-medium hover:bg-slate-50 rounded-lg transition-colors"
@@ -185,6 +187,12 @@ const Navbar: React.FC<NavbarProps> = ({ onLoginClick, onSignUpClick }) => {
           </div>
         </div>
       )}
+
+      {/* Profile Summary Modal */}
+      <ProfileSummaryModal
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+      />
     </nav>
   );
 };

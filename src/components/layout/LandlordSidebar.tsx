@@ -43,8 +43,8 @@ const LandlordSidebar: React.FC<LandlordSidebarProps> = ({ isOpen, toggleSidebar
 
       {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 h-full bg-white text-slate-900 border-r border-slate-200 z-50 transform transition-transform duration-300 ease-in-out w-64
-          ${isOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 md:relative md:z-0 md:w-64`}
+        className={`fixed top-0 left-0 h-full flex flex-col bg-white text-slate-900 border-r border-slate-200 z-50 transform transition-transform duration-300 ease-in-out w-64
+          ${isOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}
         role="navigation"
         aria-label="Landlord dashboard sidebar"
       >
@@ -114,7 +114,7 @@ const LandlordSidebar: React.FC<LandlordSidebarProps> = ({ isOpen, toggleSidebar
         </nav>
 
         {/* Logout button */}
-        <div className="absolute bottom-0 w-full p-4 border-t border-slate-200 bg-white">
+        <div className="p-4 border-t border-slate-200 bg-white">
           <button
             onClick={handleLogout}
             className="flex items-center gap-3 w-full px-4 py-3 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all duration-200 group focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
