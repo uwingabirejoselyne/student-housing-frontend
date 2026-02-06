@@ -55,8 +55,8 @@ const LandlordSidebar: React.FC<LandlordSidebarProps> = ({ isOpen, toggleSidebar
               <Building2 className="w-6 h-6 text-white" aria-hidden="true" />
             </div>
             <div>
-              <span className="text-xl font-bold text-slate-900 block">StudentStay</span>
-              <span className="text-xs text-slate-500">Landlord Portal</span>
+              <span className="text-xl font-bold text-slate-900 block">Jules</span>
+              <span className="text-xs text-slate-500">Property Manager</span>
             </div>
           </Link>
 
@@ -68,19 +68,6 @@ const LandlordSidebar: React.FC<LandlordSidebarProps> = ({ isOpen, toggleSidebar
           >
             <X className="w-5 h-5" aria-hidden="true" />
           </button>
-        </div>
-
-        {/* User profile section */}
-        <div className="p-4 border-b border-slate-200">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-bold text-sm shadow-md">
-              {user?.name?.charAt(0).toUpperCase() || 'L'}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-semibold text-slate-900 text-sm truncate">{user?.name || 'Landlord'}</p>
-              <p className="text-xs text-slate-500">Property Manager</p>
-            </div>
-          </div>
         </div>
 
         {/* Navigation items */}
