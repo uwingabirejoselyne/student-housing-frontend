@@ -78,7 +78,7 @@ const RegisterModal: React.FC<{ isOpen: boolean; onClose: () => void; onSwitchTo
 
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-2">Full Name</label>
+            <label className="block text-sm font-medium mb-2 text-left">Full Name</label>
             <input
               type="text"
               value={name}
@@ -89,7 +89,7 @@ const RegisterModal: React.FC<{ isOpen: boolean; onClose: () => void; onSwitchTo
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">Email</label>
+            <label className="block text-sm font-medium mb-2 text-left">Email</label>
             <input
               type="email"
               value={email}
@@ -100,7 +100,7 @@ const RegisterModal: React.FC<{ isOpen: boolean; onClose: () => void; onSwitchTo
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">I am a</label>
+            <label className="block text-sm font-medium mb-2 text-left">I am a</label>
             <select
               value={role}
               onChange={(e) => setRole(e.target.value as UserRole)}
@@ -112,7 +112,7 @@ const RegisterModal: React.FC<{ isOpen: boolean; onClose: () => void; onSwitchTo
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">Password</label>
+            <label className="block text-sm font-medium mb-2 text-left">Password</label>
             <input
               type="password"
               value={password}
@@ -123,7 +123,7 @@ const RegisterModal: React.FC<{ isOpen: boolean; onClose: () => void; onSwitchTo
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">Confirm Password</label>
+            <label className="block text-sm font-medium mb-2 text-left">Confirm Password</label>
             <input
               type="password"
               value={confirmPassword}
